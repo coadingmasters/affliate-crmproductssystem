@@ -35,34 +35,34 @@
 
 <style>
     /*
-     | Storefront palette — teal / emerald on a soft neutral base.
+     | Storefront palette — royal blue on a cool neutral base.
      | Follows the viewer's OS theme automatically.
      */
     :root {
-        --surface:  247 250 250;
+        --surface:  246 248 252;
         --card:     255 255 255;
-        --elevated: 242 247 246;
-        --line:     223 232 231;
-        --ink:      13 30 32;
-        --muted:    100 118 120;
-        --brand:    13 148 136;
-        --brand2:   5 150 105;
-        --success:  5 150 105;
-        --danger:   225 29 72;
+        --elevated: 240 244 251;
+        --line:     221 229 241;
+        --ink:      12 22 41;
+        --muted:    99 114 140;
+        --brand:    29 78 216;
+        --brand2:   59 130 246;
+        --success:  22 163 74;
+        --danger:   220 38 38;
     }
 
     @media (prefers-color-scheme: dark) {
         :root {
-            --surface:  7 17 18;
-            --card:     16 29 31;
-            --elevated: 23 39 41;
-            --line:     35 56 58;
-            --ink:      229 240 239;
-            --muted:    136 158 159;
-            --brand:    45 212 191;
-            --brand2:   52 211 153;
-            --success:  52 211 153;
-            --danger:   251 113 133;
+            --surface:  8 13 25;
+            --card:     16 24 42;
+            --elevated: 24 34 56;
+            --line:     35 48 75;
+            --ink:      228 236 248;
+            --muted:    139 152 178;
+            --brand:    59 130 246;
+            --brand2:   96 165 250;
+            --success:  74 222 128;
+            --danger:   248 113 113;
         }
     }
 

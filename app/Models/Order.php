@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
+    'user_id',
     'full_name',
     'email',
     'phone',
@@ -33,6 +34,14 @@ class Order extends Model
             'quantity' => 'integer',
             'total_price' => 'decimal:2',
         ];
+    }
+
+    /**
+     * The account that placed the order, if any.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

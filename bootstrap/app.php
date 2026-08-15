@@ -16,7 +16,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
 
-        $middleware->redirectGuestsTo('/admin/login');
+        // Admin URLs bounce to the admin login; everything else to the customer login.
+        $middleware->redirectGuestsTo(
+            fn (Request $request) => $request->is('admin', 'admin/*')
+                ? route('admin.login')
+                : route('login'),
+        );
+
+        // Signed in visitors have no business on the login/register screens.
+        $middleware->redirectUsersTo('/');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

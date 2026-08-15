@@ -46,6 +46,8 @@ class OrderController extends Controller
     public function store(StoreOrderRequest $request): RedirectResponse
     {
         Order::create([
+            // Tie the order to the signed in account.
+            'user_id' => $request->user()->id,
             ...$request->safe()->only([
                 'full_name',
                 'email',

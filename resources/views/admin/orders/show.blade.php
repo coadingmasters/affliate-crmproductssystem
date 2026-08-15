@@ -47,6 +47,17 @@
                         <dt class="text-xs uppercase tracking-wider text-muted">Placed</dt>
                         <dd class="mt-1 text-sm font-medium text-ink">{{ $order->created_at->format('M j, Y \a\t g:i A') }}</dd>
                     </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wider text-muted">Account</dt>
+                        <dd class="mt-1 text-sm font-medium text-ink">
+                            @if ($order->user)
+                                {{ $order->user->name }}
+                                <span class="text-xs text-muted">({{ $order->user->email }})</span>
+                            @else
+                                <span class="text-muted">Guest / account removed</span>
+                            @endif
+                        </dd>
+                    </div>
                     <div class="sm:col-span-2">
                         <dt class="text-xs uppercase tracking-wider text-muted">Address</dt>
                         <dd class="mt-1 whitespace-pre-line rounded-xl border border-line bg-elevated p-3 text-sm font-medium text-ink">{{ $order->address }}</dd>
