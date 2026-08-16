@@ -62,7 +62,7 @@
                     <p class="text-xl font-extrabold tracking-tight text-brand">${{ number_format($order->total_price, 2) }}</p>
                 </div>
 
-                <div class="mt-3 grid grid-cols-1 gap-3 border-t border-line pt-3 sm:grid-cols-3">
+                <div class="mt-3 grid grid-cols-2 gap-3 border-t border-line pt-3 sm:grid-cols-3">
                     <div>
                         <p class="text-xs uppercase tracking-wider text-muted">Product</p>
                         <p class="mt-0.5 text-sm font-medium text-ink">{{ $order->product?->name ?? '—' }}</p>

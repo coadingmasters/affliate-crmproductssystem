@@ -35,32 +35,32 @@
 
 <style>
     /*
-     | Storefront palette — royal blue on a cool neutral base.
+     | Storefront palette — cool slate base with a warm coral call to action.
      | Follows the viewer's OS theme automatically.
      */
     :root {
-        --surface:  246 248 252;
+        --surface:  248 249 251;
         --card:     255 255 255;
-        --elevated: 240 244 251;
-        --line:     221 229 241;
-        --ink:      12 22 41;
-        --muted:    99 114 140;
-        --brand:    29 78 216;
-        --brand2:   59 130 246;
+        --elevated: 241 244 249;
+        --line:     223 228 238;
+        --ink:      15 21 33;
+        --muted:    100 112 133;
+        --brand:    194 65 12;   /* deep coral — 4.8:1 on white, passes AA for text */
+        --brand2:   234 88 12;   /* brighter coral for gradient ends */
         --success:  22 163 74;
-        --danger:   220 38 38;
+        --danger:   190 24 60;
     }
 
     @media (prefers-color-scheme: dark) {
         :root {
-            --surface:  8 13 25;
-            --card:     16 24 42;
-            --elevated: 24 34 56;
-            --line:     35 48 75;
-            --ink:      228 236 248;
-            --muted:    139 152 178;
-            --brand:    59 130 246;
-            --brand2:   96 165 250;
+            --surface:  12 15 20;
+            --card:     22 26 34;
+            --elevated: 31 37 48;
+            --line:     44 52 67;
+            --ink:      232 236 244;
+            --muted:    148 160 180;
+            --brand:    251 113 133;  /* softened for dark backgrounds */
+            --brand2:   253 164 175;
             --success:  74 222 128;
             --danger:   248 113 113;
         }
@@ -106,6 +106,13 @@
     @keyframes float-b {
         0%, 100% { transform: translate(0, 0) scale(1); }
         50%      { transform: translate(-45px, -35px) scale(1.1); }
+    }
+
+    /* Smaller, lighter glows on phones — cheaper to paint and less overwhelming. */
+    @media (max-width: 640px) {
+        .orb { filter: blur(52px); opacity: .38; }
+        .orb-a { width: 260px; height: 260px; top: -90px; left: -80px; }
+        .orb-b { width: 240px; height: 240px; bottom: -90px; right: -70px; }
     }
 
     /* ---------- Entrance ---------- */
