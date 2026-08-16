@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -18,6 +19,31 @@ class OrderController extends Controller
     {
         return view('frontend.order', [
             'products' => Product::active()->orderBy('name')->get(),
+        ]);
+    }
+
+    /**
+     * The signed in customer's own order history.
+     */
+    public function history(Request $request): View
+    {
+        $orders = $request->user()->orders()
+            ->with(['product', 'productPrice'])
+            ->latest()
+            ->paginate(10);
+
+        $counts = $request->user()->orders()
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        return view('frontend.history', [
+            'orders' => $orders,
+            'totalOrders' => (int) $counts->sum(),
+            'newOrders' => (int) $counts->get('new', 0),
+            'paidOrders' => (int) $counts->get('paid', 0),
+            'cancelledOrders' => (int) $counts->get('cancelled', 0),
+            'totalSpent' => (float) $request->user()->orders()->where('status', 'paid')->sum('total_price'),
         ]);
     }
 

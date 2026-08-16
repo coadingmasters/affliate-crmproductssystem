@@ -65,10 +65,10 @@
             </form>
         </div>
 
-        <div class="rise mt-5 text-center" style="--delay: 180ms">
+        <div class="rise mt-5 rounded-xl border border-line bg-card/60 px-4 py-3 text-center backdrop-blur" style="--delay: 180ms">
             <p class="text-sm text-muted">
-                Don't have an account?
-                <a href="{{ route('register') }}" class="font-semibold text-brand transition hover:underline">Sign up</a>
+                Need an account? Accounts are issued by our team &mdash;
+                <span class="font-medium text-ink">contact your administrator</span> for login details.
             </p>
         </div>
 

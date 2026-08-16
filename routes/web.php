@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
@@ -12,8 +13,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | Customer authentication
 |--------------------------------------------------------------------------
-| Guests landing on the site are sent to the login screen, which links
-| through to sign up.
+| Accounts are issued by an admin, so there is no public sign up.
 */
 
 Route::middleware('guest')->group(function () {
@@ -21,11 +21,6 @@ Route::middleware('guest')->group(function () {
     Route::post('login', [CustomerAuthController::class, 'login'])
         ->middleware('throttle:5,1')
         ->name('login.attempt');
-
-    Route::get('register', [CustomerAuthController::class, 'showRegister'])->name('register');
-    Route::post('register', [CustomerAuthController::class, 'register'])
-        ->middleware('throttle:5,1')
-        ->name('register.store');
 });
 
 Route::post('logout', [CustomerAuthController::class, 'logout'])
@@ -34,13 +29,14 @@ Route::post('logout', [CustomerAuthController::class, 'logout'])
 
 /*
 |--------------------------------------------------------------------------
-| Storefront (requires a signed in account)
+| Customer area (requires a signed in account)
 |--------------------------------------------------------------------------
 */
 
 Route::middleware('auth')->group(function () {
     Route::get('/', [OrderController::class, 'create'])->name('order.create');
     Route::post('/order', [OrderController::class, 'store'])->name('order.store');
+    Route::get('/my-orders', [OrderController::class, 'history'])->name('order.history');
     Route::get('/products/{product}/prices', [OrderController::class, 'prices'])->name('products.prices');
 });
 
@@ -63,6 +59,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         Route::resource('products', ProductController::class)->except('show');
+        Route::resource('users', UserController::class)->except('show');
 
         Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
         Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
