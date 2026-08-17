@@ -45,7 +45,7 @@
                         <th class="px-4 py-3.5 font-medium">Total</th>
                         <th class="px-4 py-3.5 font-medium">Commission</th>
                         <th class="px-4 py-3.5 font-medium">Status</th>
-                        <th class="px-4 py-3.5 font-medium">Date</th>
+                        <th class="px-4 py-3.5 font-medium">Submitted</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-line">
@@ -65,8 +65,19 @@
                                 <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $order->statusClasses() }}">
                                     {{ $order->statusLabel() }}
                                 </span>
+                                @if ($order->statusChangedAt())
+                                    <span class="mt-1 block whitespace-nowrap text-xs text-muted">
+                                        {{ $order->statusChangedAt()->format('M j, g:i A') }}
+                                    </span>
+                                @endif
                             </td>
-                            <td class="whitespace-nowrap px-4 py-3.5 text-muted">{{ $order->created_at->format('M j, Y') }}</td>
+                            <td class="whitespace-nowrap px-4 py-3.5">
+                                <span class="block text-ink">{{ $order->submittedAt()->format('M j, Y') }}</span>
+                                <span class="block text-xs text-muted">
+                                    {{ $order->submittedAt()->format('g:i A') }}
+                                    &middot; {{ $order->submittedAt()->diffForHumans() }}
+                                </span>
+                            </td>
                         </tr>
                     @empty
                         <tr>

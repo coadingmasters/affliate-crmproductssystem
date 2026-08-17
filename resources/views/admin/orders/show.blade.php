@@ -44,8 +44,24 @@
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-xs uppercase tracking-wider text-muted">Placed</dt>
-                        <dd class="mt-1 text-sm font-medium text-ink">{{ $order->created_at->format('M j, Y \a\t g:i A') }}</dd>
+                        <dt class="text-xs uppercase tracking-wider text-muted">Submitted</dt>
+                        <dd class="mt-1 text-sm font-medium text-ink">
+                            {{ $order->submittedAtLabel() }}
+                            <span class="block text-xs font-normal text-muted">{{ $order->submittedAt()->diffForHumans() }}</span>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wider text-muted">Status Changed</dt>
+                        <dd class="mt-1 text-sm font-medium text-ink">
+                            @if ($order->statusChangedAtLabel())
+                                {{ $order->statusChangedAtLabel() }}
+                                <span class="block text-xs font-normal text-muted">
+                                    {{ $order->timeToStatus() }} after it was submitted
+                                </span>
+                            @else
+                                <span class="text-muted">Not changed yet</span>
+                            @endif
+                        </dd>
                     </div>
                     <div>
                         <dt class="text-xs uppercase tracking-wider text-muted">Account</dt>

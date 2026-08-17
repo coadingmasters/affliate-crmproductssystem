@@ -328,6 +328,7 @@
                             <th class="px-5 py-3 font-medium">Product</th>
                             <th class="px-5 py-3 font-medium">Total</th>
                             <th class="px-5 py-3 font-medium">Status</th>
+                            <th class="px-5 py-3 font-medium">Submitted</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-line">
@@ -349,10 +350,14 @@
                                         {{ $order->statusLabel() }}
                                     </span>
                                 </td>
+                                <td class="whitespace-nowrap px-5 py-3.5">
+                                    <span class="block text-ink">{{ $order->submittedAt()->format('M j, Y') }}</span>
+                                    <span class="block text-xs text-muted">{{ $order->submittedAt()->format('g:i A') }}</span>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-5 py-12 text-center text-muted">No orders yet.</td>
+                                <td colspan="6" class="px-5 py-12 text-center text-muted">No orders yet.</td>
                             </tr>
                         @endforelse
                     </tbody>

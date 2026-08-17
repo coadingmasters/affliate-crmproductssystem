@@ -71,8 +71,13 @@
                             </span>
                         </div>
                         <p class="mt-1 text-sm text-muted">
-                            {{ $order->created_at->format('M j, Y \a\t g:i A') }}
+                            Submitted {{ $order->submittedAtLabel() }}
                         </p>
+                        @if ($order->statusChangedAtLabel())
+                            <p class="mt-0.5 text-xs text-muted">
+                                {{ $label }} on {{ $order->statusChangedAtLabel() }}
+                            </p>
+                        @endif
                     </div>
                     <div class="text-right">
                         <p class="text-xl font-extrabold tracking-tight text-brand">${{ number_format($order->total_price, 2) }}</p>

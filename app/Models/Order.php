@@ -70,7 +70,20 @@ class Order extends Model
             'quantity' => 'integer',
             'total_price' => 'decimal:2',
             'commission_total' => 'decimal:2',
+            'status_changed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Stamp the moment the status moves, leaving created_at untouched.
+     */
+    protected static function booted(): void
+    {
+        static::updating(function (self $order) {
+            if ($order->isDirty('status')) {
+                $order->status_changed_at = now();
+            }
+        });
     }
 
     /**
@@ -121,6 +134,55 @@ class Order extends Model
         $tone = self::STATUS_META[$this->status]['tone'] ?? 'muted';
 
         return "bg-{$tone}/10 text-{$tone}";
+    }
+
+    /**
+     * When the order was submitted, in the configured display timezone.
+     */
+    public function submittedAt(): \Carbon\CarbonInterface
+    {
+        return $this->created_at->timezone(config('app.display_timezone'));
+    }
+
+    /**
+     * Full submission date and time, e.g. "Aug 17, 2026 at 3:42 PM".
+     */
+    public function submittedAtLabel(): string
+    {
+        return $this->submittedAt()->format('M j, Y \a\t g:i A');
+    }
+
+    /**
+     * When the status was last changed, in the display timezone.
+     *
+     * An order submitted on the 14th and cleared on the 20th keeps both
+     * dates: the submission date never moves, this records the change.
+     */
+    public function statusChangedAt(): ?\Carbon\CarbonInterface
+    {
+        return $this->status_changed_at?->timezone(config('app.display_timezone'));
+    }
+
+    /**
+     * Full status change date and time, or null if it never moved.
+     */
+    public function statusChangedAtLabel(): ?string
+    {
+        return $this->statusChangedAt()?->format('M j, Y \a\t g:i A');
+    }
+
+    /**
+     * How long the order took to reach its current status.
+     */
+    public function timeToStatus(): ?string
+    {
+        if (! $this->status_changed_at) {
+            return null;
+        }
+
+        return $this->created_at->diffForHumans($this->status_changed_at, [
+            'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE,
+        ]);
     }
 
     /**
