@@ -89,15 +89,16 @@ class DemoOrderSeeder extends Seeder
     private function status(int $daysAgo): string
     {
         if ($daysAgo <= 2) {
-            return random_int(1, 10) <= 7 ? 'new' : 'paid';
+            return random_int(1, 10) <= 7 ? 'new' : 'sale';
         }
 
         $roll = random_int(1, 10);
 
         return match (true) {
-            $roll <= 6 => 'paid',
+            $roll <= 5 => 'sale',
+            $roll <= 7 => 'post_sale',
             $roll <= 8 => 'new',
-            default => 'cancelled',
+            default => 'cancel',
         };
     }
 }

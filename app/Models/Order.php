@@ -29,29 +29,25 @@ class Order extends Model
      */
     public const STATUS_META = [
         'new'       => ['label' => 'New',       'tone' => 'warning', 'customer' => 'Received'],
-        'contacted' => ['label' => 'Contacted', 'tone' => 'info',    'customer' => 'We called you'],
-        'confirmed' => ['label' => 'Confirmed', 'tone' => 'brand',   'customer' => 'Confirmed'],
-        'shipped'   => ['label' => 'Shipped',   'tone' => 'brand',   'customer' => 'On its way'],
-        'delivered' => ['label' => 'Delivered', 'tone' => 'success', 'customer' => 'Delivered'],
-        'paid'      => ['label' => 'Paid',      'tone' => 'success', 'customer' => 'Completed'],
-        'cancelled' => ['label' => 'Cancelled', 'tone' => 'danger',  'customer' => 'Cancelled'],
-        'returned'  => ['label' => 'Returned',  'tone' => 'danger',  'customer' => 'Returned'],
+        'sale'      => ['label' => 'Sale',      'tone' => 'success', 'customer' => 'Confirmed'],
+        'post_sale' => ['label' => 'Post Sale', 'tone' => 'info',    'customer' => 'Completed'],
+        'cancel'    => ['label' => 'Cancel',    'tone' => 'danger',  'customer' => 'Cancelled'],
     ];
 
     /**
-     * Statuses that count as a completed sale.
+     * Statuses that count as a converted sale, and so earn commission.
      */
-    public const EARNING_STATUSES = ['delivered', 'paid'];
+    public const EARNING_STATUSES = ['sale', 'post_sale'];
 
     /**
-     * Statuses still moving through the pipeline.
+     * Statuses still awaiting an outcome.
      */
-    public const OPEN_STATUSES = ['new', 'contacted', 'confirmed', 'shipped'];
+    public const OPEN_STATUSES = ['new'];
 
     /**
      * Statuses that ended without a sale.
      */
-    public const LOST_STATUSES = ['cancelled', 'returned'];
+    public const LOST_STATUSES = ['cancel'];
 
     /**
      * Every valid status key.
@@ -136,7 +132,7 @@ class Order extends Model
             return 100;
         }
 
-        $steps = ['new', 'contacted', 'confirmed', 'shipped', 'delivered', 'paid'];
+        $steps = ['new', 'sale', 'post_sale'];
         $position = array_search($this->status, $steps, true);
 
         return $position === false ? 0 : (int) round(($position + 1) / count($steps) * 100);
