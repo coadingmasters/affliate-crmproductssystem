@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'My Orders · Med Alert')
+@section("title", "My Dashboard · Med Alert")
 
 @section('content')
     @include('partials.account-bar')
 
     <div class="rise mb-5">
-        <h1 class="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">My Orders</h1>
+        <h1 class="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">My Dashboard</h1>
         <p class="mt-1 text-sm text-muted">Everything you have ordered, and where it stands.</p>
     </div>
 

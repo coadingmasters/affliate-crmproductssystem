@@ -33,7 +33,7 @@ Route::post('logout', [CustomerAuthController::class, 'logout'])
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'customer'])->group(function () {
     Route::get('/', [OrderController::class, 'create'])->name('order.create');
     Route::post('/order', [OrderController::class, 'store'])->name('order.store');
     Route::get('/my-orders', [OrderController::class, 'history'])->name('order.history');

@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'customer' => \App\Http\Middleware\CustomerOnly::class,
         ]);
 
         // Admin URLs bounce to the admin login; everything else to the customer login.
@@ -23,8 +24,13 @@ return Application::configure(basePath: dirname(__DIR__))
                 : route('login'),
         );
 
-        // Signed in visitors have no business on the login/register screens.
-        $middleware->redirectUsersTo('/');
+        // Signed in visitors have no business on the login screens — send each
+        // to the side of the system they belong to.
+        $middleware->redirectUsersTo(
+            fn (Request $request) => $request->user()?->isAdmin()
+                ? route('admin.dashboard')
+                : '/',
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
