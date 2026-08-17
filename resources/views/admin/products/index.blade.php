@@ -50,6 +50,11 @@
                                 <span class="inline-flex items-center gap-1.5 rounded-lg bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">
                                     {{ $product->prices_count }} {{ Str::plural('option', $product->prices_count) }}
                                 </span>
+                                @if ($product->prices_max_commission > 0)
+                                    <span class="mt-1 block text-xs text-success">
+                                        up to ${{ number_format($product->prices_max_commission, 2) }} commission
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-5 py-4">
                                 @if ($product->is_active)

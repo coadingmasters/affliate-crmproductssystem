@@ -100,4 +100,12 @@ class StoreOrderRequest extends FormRequest
     {
         return round((float) $this->productPrice()->price * $this->integer('quantity'), 2);
     }
+
+    /**
+     * The commission earned on this order, also recalculated server side.
+     */
+    public function commission(): float
+    {
+        return round((float) $this->productPrice()->commission * $this->integer('quantity'), 2);
+    }
 }

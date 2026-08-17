@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'product_price_id',
     'quantity',
     'total_price',
+    'commission_total',
     'status',
     'notes',
 ])]
@@ -72,6 +73,7 @@ class Order extends Model
         return [
             'quantity' => 'integer',
             'total_price' => 'decimal:2',
+            'commission_total' => 'decimal:2',
         ];
     }
 

@@ -170,6 +170,20 @@
                             </div>
                             <p class="mt-1.5 text-xs text-muted">Confirmed when we contact you.</p>
                         </div>
+
+                        <div class="sm:col-span-2">
+                            <label for="commission_display" class="mb-1.5 block text-sm font-medium text-ink">Your Commission</label>
+                            <div class="flex items-center justify-between rounded-xl border border-success/30 bg-success/10 px-3.5 py-2.5">
+                                <span class="flex items-center gap-2 text-xs font-medium text-muted">
+                                    <svg class="h-4 w-4 text-success" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 9v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    You earn on this order
+                                </span>
+                                <span id="commission_display" class="text-lg font-extrabold tracking-tight text-success">$0.00</span>
+                            </div>
+                            <p class="mt-1.5 text-xs text-muted">Paid once the order is delivered and settled.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -219,6 +233,7 @@
         const priceSelect = document.getElementById('product_price_id');
         const quantityInput = document.getElementById('quantity');
         const totalDisplay = document.getElementById('total_display');
+        const commissionDisplay = document.getElementById('commission_display');
         const submitButton = document.getElementById('submit-btn');
 
         // Route template; the placeholder is swapped for the chosen product id.
@@ -232,18 +247,26 @@
             });
         }
 
+        function flash(el, value) {
+            if (value === el.textContent) {
+                return;
+            }
+
+            el.textContent = value;
+            el.classList.remove('flash');
+            void el.offsetWidth; // restart the animation
+            el.classList.add('flash');
+        }
+
         function updateTotal() {
             const option = priceSelect.selectedOptions[0];
             const unitPrice = option && option.dataset.price ? parseFloat(option.dataset.price) : 0;
+            const unitCommission = option && option.dataset.commission ? parseFloat(option.dataset.commission) : 0;
             const quantity = parseInt(quantityInput.value, 10);
-            const next = money(unitPrice * (quantity > 0 ? quantity : 0));
+            const count = quantity > 0 ? quantity : 0;
 
-            if (next !== totalDisplay.textContent) {
-                totalDisplay.textContent = next;
-                totalDisplay.classList.remove('flash');
-                void totalDisplay.offsetWidth; // restart the animation
-                totalDisplay.classList.add('flash');
-            }
+            flash(totalDisplay, money(unitPrice * count));
+            flash(commissionDisplay, money(unitCommission * count));
         }
 
         function setPlaceholder(text, disabled) {
@@ -286,8 +309,10 @@
                 prices.forEach(function (price) {
                     const option = document.createElement('option');
                     option.value = price.id;
-                    option.textContent = price.label + ' — ' + money(price.price);
+                    option.textContent = price.label + ' — ' + money(price.price)
+                        + (price.commission > 0 ? '  (earn ' + money(price.commission) + ')' : '');
                     option.dataset.price = price.price;
+                    option.dataset.commission = price.commission;
                     option.selected = String(price.id) === String(preselectId);
                     priceSelect.appendChild(option);
                 });

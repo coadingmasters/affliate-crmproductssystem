@@ -43,6 +43,7 @@
                         <th class="px-4 py-3.5 font-medium">Price Label</th>
                         <th class="px-4 py-3.5 font-medium">Qty</th>
                         <th class="px-4 py-3.5 font-medium">Total</th>
+                        <th class="px-4 py-3.5 font-medium">Commission</th>
                         <th class="px-4 py-3.5 font-medium">Status</th>
                         <th class="px-4 py-3.5 font-medium">Date</th>
                     </tr>
@@ -59,6 +60,7 @@
                             <td class="whitespace-nowrap px-4 py-3.5 text-muted">{{ $order->productPrice?->label ?? '—' }}</td>
                             <td class="px-4 py-3.5 text-muted">{{ $order->quantity }}</td>
                             <td class="whitespace-nowrap px-4 py-3.5 font-semibold text-ink">${{ number_format($order->total_price, 2) }}</td>
+                            <td class="whitespace-nowrap px-4 py-3.5 font-semibold text-success">${{ number_format($order->commission_total, 2) }}</td>
                             <td class="px-4 py-3.5">
                                 <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $order->statusClasses() }}">
                                     {{ $order->statusLabel() }}
@@ -68,7 +70,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="px-4 py-14 text-center text-muted">
+                            <td colspan="11" class="px-4 py-14 text-center text-muted">
                                 No {{ $status === 'all' ? '' : $status }} orders found.
                             </td>
                         </tr>

@@ -31,6 +31,7 @@ class DashboardController extends Controller
 
         $revenue = (float) Order::whereIn('status', Order::EARNING_STATUSES)->sum('total_price');
         $pipeline = (float) Order::whereIn('status', Order::OPEN_STATUSES)->sum('total_price');
+        $commission = (float) Order::whereIn('status', Order::EARNING_STATUSES)->sum('commission_total');
 
         $series = $this->dailySeries();
 
@@ -52,6 +53,7 @@ class DashboardController extends Controller
 
             'revenue' => $revenue,
             'pipeline' => $pipeline,
+            'commission' => $commission,
             'averageOrder' => $completedOrders > 0 ? $revenue / $completedOrders : 0.0,
             'conversionRate' => $totalOrders > 0 ? $completedOrders / $totalOrders * 100 : 0.0,
 

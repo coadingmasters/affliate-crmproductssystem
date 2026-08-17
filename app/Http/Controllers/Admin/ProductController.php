@@ -19,6 +19,7 @@ class ProductController extends Controller
     public function index(): View
     {
         $products = Product::withCount('prices')
+            ->withMax('prices', 'commission')
             ->latest()
             ->paginate(15);
 
@@ -134,6 +135,7 @@ class ProductController extends Controller
             $attributes = [
                 'label' => $row['label'],
                 'price' => $row['price'],
+                'commission' => $row['commission'] ?? 0,
             ];
 
             if (! empty($row['id'])) {

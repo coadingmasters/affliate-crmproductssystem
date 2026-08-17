@@ -117,10 +117,11 @@
     </div>
 
     {{-- Revenue strip --}}
-    <div class="rise mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3" style="--delay: 280ms">
+    <div class="rise mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" style="--delay: 280ms">
         @php
             $money = [
                 ['label' => 'Revenue (completed)', 'value' => $revenue, 'token' => 'success'],
+                ['label' => 'Commission Payable', 'value' => $commission, 'token' => 'info'],
                 ['label' => 'Open Pipeline', 'value' => $pipeline, 'token' => 'warning'],
                 ['label' => 'Avg. Order Value', 'value' => $averageOrder, 'token' => 'accent2'],
             ];
