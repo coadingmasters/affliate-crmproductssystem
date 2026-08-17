@@ -50,11 +50,12 @@
     $circumference = 2 * M_PI * $radius;
     $donutTotal = max(1, $totalOrders);
 
-    $segments = [
-        ['label' => 'New',       'value' => $newOrders,       'token' => 'warning'],
-        ['label' => 'Paid',      'value' => $paidOrders,      'token' => 'success'],
-        ['label' => 'Cancelled', 'value' => $cancelledOrders, 'token' => 'danger'],
-    ];
+    // One ring segment per status in the pipeline.
+    $segments = $statusCounts->filter(fn ($s) => $s['value'] > 0)->values()->all();
+
+    if (empty($segments)) {
+        $segments = [['label' => 'No orders', 'value' => 0, 'token' => 'muted']];
+    }
 
     $rotation = 0;
     foreach ($segments as $i => $segment) {
@@ -74,15 +75,15 @@
             'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2',
         ],
         [
-            'label' => 'New Orders', 'value' => $newOrders, 'money' => false, 'token' => 'warning',
+            'label' => 'In Progress', 'value' => $openOrders, 'money' => false, 'token' => 'warning',
             'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
         ],
         [
-            'label' => 'Paid Orders', 'value' => $paidOrders, 'money' => false, 'token' => 'success',
+            'label' => 'Completed', 'value' => $completedOrders, 'money' => false, 'token' => 'success',
             'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
         ],
         [
-            'label' => 'Cancelled Orders', 'value' => $cancelledOrders, 'money' => false, 'token' => 'danger',
+            'label' => 'Cancelled / Returned', 'value' => $lostOrders, 'money' => false, 'token' => 'danger',
             'icon' => 'M10 14L21 3m-9 0H3v18h18v-9M15 9l-6 6m0-6l6 6',
         ],
     ];
@@ -119,7 +120,7 @@
     <div class="rise mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3" style="--delay: 280ms">
         @php
             $money = [
-                ['label' => 'Revenue (paid)', 'value' => $revenue, 'token' => 'success'],
+                ['label' => 'Revenue (completed)', 'value' => $revenue, 'token' => 'success'],
                 ['label' => 'Open Pipeline', 'value' => $pipeline, 'token' => 'warning'],
                 ['label' => 'Avg. Order Value', 'value' => $averageOrder, 'token' => 'accent2'],
             ];
@@ -220,7 +221,7 @@
         {{-- Status donut --}}
         <div class="rise rounded-2xl border border-line bg-card p-5" style="--delay: 400ms">
             <h2 class="text-sm font-semibold text-ink">Status Split</h2>
-            <p class="mt-0.5 text-xs text-muted">All time</p>
+            <p class="mt-0.5 text-xs text-muted">All time, by pipeline stage</p>
 
             <div class="my-5 flex justify-center">
                 <div class="relative">
@@ -267,7 +268,7 @@
 
             <div class="mt-5 rounded-xl border border-line bg-elevated p-3.5">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs text-muted">Conversion to paid</span>
+                    <span class="text-xs text-muted">Completed rate</span>
                     <span class="text-sm font-bold text-success">{{ number_format($conversionRate, 1) }}%</span>
                 </div>
                 <div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-success/10">
@@ -343,8 +344,8 @@
                                 </td>
                                 <td class="whitespace-nowrap px-5 py-3.5 font-semibold text-ink">${{ number_format($order->total_price, 2) }}</td>
                                 <td class="px-5 py-3.5">
-                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize {{ $order->statusClasses() }}">
-                                        {{ $order->status }}
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $order->statusClasses() }}">
+                                        {{ $order->statusLabel() }}
                                     </span>
                                 </td>
                             </tr>

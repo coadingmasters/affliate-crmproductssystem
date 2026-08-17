@@ -18,7 +18,7 @@ class OrderController extends Controller
     {
         $status = $request->query('status');
 
-        if (! in_array($status, Order::STATUSES, true)) {
+        if (! in_array($status, Order::statuses(), true)) {
             $status = 'all';
         }
 

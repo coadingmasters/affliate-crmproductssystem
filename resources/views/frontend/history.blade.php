@@ -40,19 +40,17 @@
     <div class="rise space-y-3" style="--delay: 200ms">
         @forelse ($orders as $order)
             @php
-                $tone = match ($order->status) {
-                    'paid' => ['bg-success/10', 'text-success', 'Completed'],
-                    'cancelled' => ['bg-danger/10', 'text-danger', 'Cancelled'],
-                    default => ['bg-brand/10', 'text-brand', 'In Progress'],
-                };
+                $badge = $order->statusClasses();
+                $label = $order->customerStatusLabel();
+                $progress = $order->progress();
             @endphp
             <div class="rounded-2xl border border-line bg-card/90 p-4 backdrop-blur transition hover:border-brand/40 sm:p-5">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div class="min-w-0">
                         <div class="flex items-center gap-2.5">
                             <span class="text-sm font-bold text-ink">Order #{{ $order->id }}</span>
-                            <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $tone[0] }} {{ $tone[1] }}">
-                                {{ $tone[2] }}
+                            <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $badge }}">
+                                {{ $label }}
                             </span>
                         </div>
                         <p class="mt-1 text-sm text-muted">

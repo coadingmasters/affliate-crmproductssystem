@@ -71,7 +71,9 @@
                                         Edit
                                     </a>
                                     <form method="POST" action="{{ route('admin.products.destroy', $product) }}"
-                                          onsubmit="return confirm('Delete “{{ $product->name }}”? This cannot be undone.');">
+                                          data-confirm-title="Delete product"
+                                          data-confirm="{{ $product->name }} will be removed permanently. This cannot be undone."
+                                          data-confirm-text="Delete product">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"

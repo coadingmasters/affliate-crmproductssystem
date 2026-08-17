@@ -110,7 +110,9 @@
                                     </a>
                                     @unless ($account->is(auth()->user()))
                                         <form method="POST" action="{{ route('admin.users.destroy', $account) }}"
-                                              onsubmit="return confirm('Delete {{ $account->name }}? Their past orders are kept.');">
+                                              data-confirm-title="Delete user"
+                                              data-confirm="{{ $account->name }} will lose access immediately. Their past orders are kept."
+                                              data-confirm-text="Delete user">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit"

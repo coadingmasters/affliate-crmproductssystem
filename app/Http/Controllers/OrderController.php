@@ -40,11 +40,23 @@ class OrderController extends Controller
         return view('frontend.history', [
             'orders' => $orders,
             'totalOrders' => (int) $counts->sum(),
-            'newOrders' => (int) $counts->get('new', 0),
-            'paidOrders' => (int) $counts->get('paid', 0),
-            'cancelledOrders' => (int) $counts->get('cancelled', 0),
-            'totalSpent' => (float) $request->user()->orders()->where('status', 'paid')->sum('total_price'),
+            'newOrders' => $this->sumStatuses($counts, Order::OPEN_STATUSES),
+            'paidOrders' => $this->sumStatuses($counts, Order::EARNING_STATUSES),
+            'cancelledOrders' => $this->sumStatuses($counts, Order::LOST_STATUSES),
+            'totalSpent' => (float) $request->user()->orders()
+                ->whereIn('status', Order::EARNING_STATUSES)
+                ->sum('total_price'),
         ]);
+    }
+
+    /**
+     * Total the given statuses out of a status => count map.
+     *
+     * @param  array<int, string>  $statuses
+     */
+    private function sumStatuses(\Illuminate\Support\Collection $counts, array $statuses): int
+    {
+        return (int) collect($statuses)->sum(fn ($status) => (int) $counts->get($status, 0));
     }
 
     /**

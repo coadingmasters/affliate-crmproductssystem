@@ -24,7 +24,7 @@ class UpdateOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => ['required', Rule::in(Order::STATUSES)],
+            'status' => ['required', Rule::in(Order::statuses())],
             'notes' => ['nullable', 'string', 'max:5000'],
         ];
     }

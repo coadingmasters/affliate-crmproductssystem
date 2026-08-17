@@ -21,8 +21,8 @@
             <div class="rise rounded-2xl border border-line bg-card p-5 sm:p-6" style="--delay: 60ms">
                 <div class="mb-5 flex items-center justify-between">
                     <h2 class="text-sm font-semibold text-ink">Customer</h2>
-                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize {{ $order->statusClasses() }}">
-                        {{ $order->status }}
+                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $order->statusClasses() }}">
+                        {{ $order->statusLabel() }}
                     </span>
                 </div>
 
@@ -111,9 +111,9 @@
                         <select name="status" id="status"
                                 class="w-full rounded-xl border bg-elevated px-3.5 py-2.5 text-sm text-ink transition focus:outline-none focus:ring-2 focus:ring-accent/30
                                        {{ $errors->has('status') ? 'border-danger' : 'border-line focus:border-accent' }}">
-                            @foreach (App\Models\Order::STATUSES as $value)
+                            @foreach (App\Models\Order::STATUS_META as $value => $meta)
                                 <option value="{{ $value }}" @selected(old('status', $order->status) === $value)>
-                                    {{ ucfirst($value) }}
+                                    {{ $meta['label'] }}
                                 </option>
                             @endforeach
                         </select>

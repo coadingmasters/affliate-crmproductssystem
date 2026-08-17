@@ -5,20 +5,26 @@
 
 @section('content')
     @php
-        $filters = ['all' => 'All', 'new' => 'New', 'paid' => 'Paid', 'cancelled' => 'Cancelled'];
+        // "All" plus every stage of the pipeline.
+        $filters = ['all' => 'All'] + collect(App\Models\Order::STATUS_META)
+            ->map(fn ($meta) => $meta['label'])
+            ->all();
     @endphp
 
-    <div class="rise mb-5 flex flex-wrap items-center justify-between gap-4">
-        <div class="inline-flex rounded-xl border border-line bg-card p-1">
-            @foreach ($filters as $value => $label)
-                <a href="{{ route('admin.orders.index', $value === 'all' ? [] : ['status' => $value]) }}"
-                   class="rounded-lg px-3.5 py-1.5 text-sm font-medium transition
-                          {{ $status === $value
-                              ? 'bg-gradient-to-r from-accent to-accent2 text-white shadow-md shadow-accent/25'
-                              : 'text-muted hover:bg-elevated hover:text-ink' }}">
-                    {{ $label }}
-                </a>
-            @endforeach
+    <div class="rise mb-5 space-y-3">
+        {{-- Scrolls sideways on phones so all eight stages stay reachable --}}
+        <div class="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+            <div class="inline-flex min-w-max gap-1 rounded-xl border border-line bg-card p-1">
+                @foreach ($filters as $value => $label)
+                    <a href="{{ route('admin.orders.index', $value === 'all' ? [] : ['status' => $value]) }}"
+                       class="whitespace-nowrap rounded-lg px-3.5 py-1.5 text-sm font-medium transition
+                              {{ $status === $value
+                                  ? 'bg-gradient-to-r from-accent to-accent2 text-white shadow-md shadow-accent/25'
+                                  : 'text-muted hover:bg-elevated hover:text-ink' }}">
+                        {{ $label }}
+                    </a>
+                @endforeach
+            </div>
         </div>
 
         <p class="text-sm text-muted">{{ $orders->total() }} {{ Str::plural('order', $orders->total()) }}</p>
@@ -54,8 +60,8 @@
                             <td class="px-4 py-3.5 text-muted">{{ $order->quantity }}</td>
                             <td class="whitespace-nowrap px-4 py-3.5 font-semibold text-ink">${{ number_format($order->total_price, 2) }}</td>
                             <td class="px-4 py-3.5">
-                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize {{ $order->statusClasses() }}">
-                                    {{ $order->status }}
+                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $order->statusClasses() }}">
+                                    {{ $order->statusLabel() }}
                                 </span>
                             </td>
                             <td class="whitespace-nowrap px-4 py-3.5 text-muted">{{ $order->created_at->format('M j, Y') }}</td>

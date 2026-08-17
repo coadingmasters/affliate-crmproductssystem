@@ -11,7 +11,6 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
     tailwind.config = {
-        darkMode: 'class',
         theme: {
             extend: {
                 colors: {
@@ -21,10 +20,14 @@
                     line:     'rgb(var(--line) / <alpha-value>)',
                     ink:      'rgb(var(--ink) / <alpha-value>)',
                     muted:    'rgb(var(--muted) / <alpha-value>)',
-                    accent:   'rgb(var(--accent) / <alpha-value>)',
-                    accent2:  'rgb(var(--accent2) / <alpha-value>)',
+                    // brand and accent are the same colour so admin and storefront match
+                    brand:    'rgb(var(--brand) / <alpha-value>)',
+                    brand2:   'rgb(var(--brand2) / <alpha-value>)',
+                    accent:   'rgb(var(--brand) / <alpha-value>)',
+                    accent2:  'rgb(var(--brand2) / <alpha-value>)',
                     success:  'rgb(var(--success) / <alpha-value>)',
                     warning:  'rgb(var(--warning) / <alpha-value>)',
+                    info:     'rgb(var(--info) / <alpha-value>)',
                     danger:   'rgb(var(--danger) / <alpha-value>)',
                     sidebar:  'rgb(var(--sidebar) / <alpha-value>)',
                 },
@@ -36,59 +39,28 @@
     };
 </script>
 
-{{-- Set the theme before first paint so the page never flashes the wrong one. --}}
-<script>
-    (function () {
-        var stored = localStorage.getItem('admin-theme');
-        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-        if (stored === 'dark' || (!stored && prefersDark)) {
-            document.documentElement.classList.add('dark');
-        }
-    })();
-</script>
-
 <style>
     /*
-     | Admin design tokens — violet / cyan on a cool slate base.
-     | Values are space separated RGB so Tailwind can apply opacity modifiers.
+     | Same palette as the storefront — cool slate with a coral accent.
+     | Light only, by design.
      */
     :root {
-        --surface:  247 248 252;
+        --surface:  248 249 251;
         --card:     255 255 255;
-        --elevated: 244 246 251;
-        --line:     228 231 241;
-        --ink:      12 17 32;
-        --muted:    108 117 138;
-        --accent:   109 76 255;
-        --accent2:  6 182 212;
-        --success:  16 185 129;
-        --warning:  245 158 11;
-        --danger:   244 63 94;
-        --sidebar:  17 22 40;
-    }
-
-    html.dark {
-        --surface:  9 12 22;
-        --card:     19 25 42;
-        --elevated: 26 33 54;
-        --line:     37 46 71;
-        --ink:      232 236 245;
-        --muted:    138 148 170;
-        --accent:   139 111 255;
-        --accent2:  34 211 238;
-        --success:  52 211 153;
-        --warning:  251 191 36;
-        --danger:   251 113 133;
-        --sidebar:  13 17 32;
+        --elevated: 241 244 249;
+        --line:     223 228 238;
+        --ink:      15 21 33;
+        --muted:    100 112 133;
+        --brand:    194 65 12;
+        --brand2:   234 88 12;
+        --success:  21 128 61;
+        --warning:  180 83 9;
+        --info:     3 105 161;
+        --danger:   190 24 60;
+        --sidebar:  23 31 47;
     }
 
     html { color-scheme: light; }
-    html.dark { color-scheme: dark; }
-
-    body {
-        transition: background-color .3s ease, color .3s ease;
-    }
 
     /* ---------- Entrance animations ---------- */
     @keyframes rise {
@@ -102,9 +74,7 @@
         animation-delay: var(--delay, 0ms);
     }
 
-    @keyframes draw {
-        to { stroke-dashoffset: 0; }
-    }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
 
     .draw {
         stroke-dasharray: var(--len);
@@ -113,9 +83,7 @@
         animation-delay: var(--delay, 200ms);
     }
 
-    @keyframes fadeIn {
-        to { opacity: 1; }
-    }
+    @keyframes fadeIn { to { opacity: 1; } }
 
     .fade-in {
         opacity: 0;
@@ -123,10 +91,7 @@
         animation-delay: var(--delay, 600ms);
     }
 
-    @keyframes grow {
-        from { transform: scaleX(0); }
-        to   { transform: scaleX(1); }
-    }
+    @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
     .grow {
         transform-origin: left center;
@@ -142,28 +107,20 @@
     .lift:hover {
         transform: translateY(-3px);
         box-shadow: 0 12px 28px -12px rgb(var(--ink) / .18);
-        border-color: rgb(var(--accent) / .35);
+        border-color: rgb(var(--brand) / .35);
     }
 
-    .row-hover {
-        transition: background-color .18s ease;
-    }
+    .row-hover { transition: background-color .18s ease; }
 
-    /* Sliding indicator on sidebar links */
-    .nav-link {
-        position: relative;
-        transition: color .2s ease, background-color .2s ease;
-    }
+    .nav-link { position: relative; transition: color .2s ease, background-color .2s ease; }
 
     .nav-link::before {
         content: '';
         position: absolute;
-        left: 0;
-        top: 50%;
-        width: 3px;
-        height: 0;
+        left: 0; top: 50%;
+        width: 3px; height: 0;
         border-radius: 0 3px 3px 0;
-        background: rgb(var(--accent2));
+        background: rgb(var(--brand2));
         transform: translateY(-50%);
         transition: height .25s ease;
     }
@@ -171,7 +128,6 @@
     .nav-link:hover::before { height: 55%; }
     .nav-link.is-active::before { height: 70%; }
 
-    /* Custom scrollbars keep the dark theme from looking half finished */
     * { scrollbar-width: thin; scrollbar-color: rgb(var(--line)) transparent; }
     *::-webkit-scrollbar { width: 10px; height: 10px; }
     *::-webkit-scrollbar-track { background: transparent; }
@@ -191,6 +147,5 @@
             transform: none !important;
         }
         .lift:hover { transform: none; }
-        body { transition: none; }
     }
 </style>

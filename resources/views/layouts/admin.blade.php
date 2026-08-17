@@ -204,6 +204,8 @@
     })();
 </script>
 
+@include('partials.modal')
+
 @stack('scripts')
 </body>
 </html>

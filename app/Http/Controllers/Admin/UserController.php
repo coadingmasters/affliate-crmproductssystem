@@ -46,16 +46,19 @@ class UserController extends Controller
     }
 
     /**
-     * Create an account and hand the credentials back so they can be shared.
+     * Create a customer account and hand the credentials back to be shared.
      */
     public function store(UserRequest $request): RedirectResponse
     {
-        $user = User::create($request->validated());
+        $user = User::create([
+            ...$request->safe()->only(['name', 'email', 'password']),
+            // Accounts created here are always customers.
+            'role' => 'user',
+        ]);
 
         return redirect()
             ->route('admin.users.index')
             ->with('status', 'Account created for '.$user->name.'.')
-            // Shown once so the admin can pass the details to the user.
             ->with('credentials', [
                 'email' => $user->email,
                 'password' => $request->validated('password'),
@@ -74,22 +77,27 @@ class UserController extends Controller
     }
 
     /**
-     * Update an account, optionally resetting its password.
+     * Update an account. Admin accounts accept a password change only.
      */
     public function update(UserRequest $request, User $user): RedirectResponse
     {
-        $attributes = $request->safe()->only(['name', 'email', 'role']);
+        if ($user->isAdmin()) {
+            $user->update(['password' => $request->validated('password')]);
+
+            return redirect()
+                ->route('admin.users.index')
+                ->with('status', 'Admin password updated.')
+                ->with('credentials', [
+                    'email' => $user->email,
+                    'password' => $request->validated('password'),
+                ]);
+        }
+
+        $attributes = $request->safe()->only(['name', 'email']);
 
         // Blank password means "leave it alone".
         if ($request->filled('password')) {
             $attributes['password'] = $request->validated('password');
-        }
-
-        // Never let an admin strip their own admin rights and lock themselves out.
-        if ($user->is($request->user()) && $attributes['role'] !== 'admin') {
-            return back()
-                ->withInput()
-                ->with('error', 'You cannot remove your own admin access.');
         }
 
         $user->update($attributes);
@@ -109,12 +117,12 @@ class UserController extends Controller
     }
 
     /**
-     * Delete an account.
+     * Delete a customer account. Admin accounts can never be deleted.
      */
     public function destroy(Request $request, User $user): RedirectResponse
     {
-        if ($user->is($request->user())) {
-            return back()->with('error', 'You cannot delete the account you are signed in with.');
+        if ($user->isAdmin()) {
+            return back()->with('error', 'Admin accounts cannot be deleted.');
         }
 
         $name = $user->name;

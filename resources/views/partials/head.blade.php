@@ -22,7 +22,11 @@
                     muted:    'rgb(var(--muted) / <alpha-value>)',
                     brand:    'rgb(var(--brand) / <alpha-value>)',
                     brand2:   'rgb(var(--brand2) / <alpha-value>)',
+                    accent:   'rgb(var(--brand) / <alpha-value>)',
+                    accent2:  'rgb(var(--brand2) / <alpha-value>)',
                     success:  'rgb(var(--success) / <alpha-value>)',
+                    warning:  'rgb(var(--warning) / <alpha-value>)',
+                    info:     'rgb(var(--info) / <alpha-value>)',
                     danger:   'rgb(var(--danger) / <alpha-value>)',
                 },
                 fontFamily: {
@@ -35,8 +39,8 @@
 
 <style>
     /*
-     | Storefront palette — cool slate base with a warm coral call to action.
-     | Follows the viewer's OS theme automatically.
+     | Shared palette — cool slate base with a warm coral call to action.
+     | Light only, by design: the whole product uses a white scheme.
      */
     :root {
         --surface:  248 249 251;
@@ -45,28 +49,15 @@
         --line:     223 228 238;
         --ink:      15 21 33;
         --muted:    100 112 133;
-        --brand:    194 65 12;   /* deep coral — 4.8:1 on white, passes AA for text */
+        --brand:    194 65 12;   /* deep coral — 5.18:1 on white, passes AA */
         --brand2:   234 88 12;   /* brighter coral for gradient ends */
-        --success:  22 163 74;
+        --success:  21 128 61;
+        --warning:  180 83 9;
+        --info:     3 105 161;
         --danger:   190 24 60;
     }
 
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --surface:  12 15 20;
-            --card:     22 26 34;
-            --elevated: 31 37 48;
-            --line:     44 52 67;
-            --ink:      232 236 244;
-            --muted:    148 160 180;
-            --brand:    251 113 133;  /* softened for dark backgrounds */
-            --brand2:   253 164 175;
-            --success:  74 222 128;
-            --danger:   248 113 113;
-        }
-    }
-
-    html { color-scheme: light dark; }
+    html { color-scheme: light; }
 
     body {
         background-color: rgb(var(--surface));

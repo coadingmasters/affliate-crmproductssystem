@@ -12,6 +12,8 @@
         @yield('content')
     </main>
 
-    @stack('scripts')
+    @include('partials.modal')
+
+@stack('scripts')
 </body>
 </html>

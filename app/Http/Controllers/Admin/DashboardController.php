@@ -23,23 +23,37 @@ class DashboardController extends Controller
             ->groupBy('status')
             ->pluck('total', 'status');
 
+        $sumFor = fn (array $statuses) => (int) collect($statuses)
+            ->sum(fn ($status) => (int) $counts->get($status, 0));
+
         $totalOrders = (int) $counts->sum();
-        $paidOrders = (int) $counts->get('paid', 0);
+        $completedOrders = $sumFor(Order::EARNING_STATUSES);
+
+        $revenue = (float) Order::whereIn('status', Order::EARNING_STATUSES)->sum('total_price');
+        $pipeline = (float) Order::whereIn('status', Order::OPEN_STATUSES)->sum('total_price');
 
         $series = $this->dailySeries();
-        $revenue = (float) Order::where('status', 'paid')->sum('total_price');
-        $pipeline = (float) Order::where('status', 'new')->sum('total_price');
 
         return view('admin.dashboard', [
             'totalOrders' => $totalOrders,
-            'newOrders' => (int) $counts->get('new', 0),
-            'paidOrders' => $paidOrders,
-            'cancelledOrders' => (int) $counts->get('cancelled', 0),
+            'openOrders' => $sumFor(Order::OPEN_STATUSES),
+            'completedOrders' => $completedOrders,
+            'lostOrders' => $sumFor(Order::LOST_STATUSES),
+
+            // Per status, in pipeline order, for the breakdown chart.
+            'statusCounts' => collect(Order::STATUS_META)
+                ->map(fn ($meta, $key) => [
+                    'label' => $meta['label'],
+                    // 'token' is the name the chart markup uses for its colour
+                    'token' => $meta['tone'],
+                    'value' => (int) $counts->get($key, 0),
+                ])
+                ->values(),
 
             'revenue' => $revenue,
             'pipeline' => $pipeline,
-            'averageOrder' => $paidOrders > 0 ? $revenue / $paidOrders : 0.0,
-            'conversionRate' => $totalOrders > 0 ? $paidOrders / $totalOrders * 100 : 0.0,
+            'averageOrder' => $completedOrders > 0 ? $revenue / $completedOrders : 0.0,
+            'conversionRate' => $totalOrders > 0 ? $completedOrders / $totalOrders * 100 : 0.0,
 
             'series' => $series,
             'trend' => $this->trendPercentage($series),

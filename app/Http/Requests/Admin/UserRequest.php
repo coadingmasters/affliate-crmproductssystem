@@ -17,6 +17,15 @@ class UserRequest extends FormRequest
     }
 
     /**
+     * Every account created here is a customer. The role is never accepted
+     * from the form, so it cannot be escalated by tampering with the request.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->request->remove('role');
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, mixed>
@@ -25,15 +34,19 @@ class UserRequest extends FormRequest
     {
         $user = $this->route('user');
 
+        // The super admin's own record is password-only.
+        if ($user?->isAdmin()) {
+            return [
+                'password' => ['required', Password::min(8)->letters()->numbers()],
+            ];
+        }
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required', 'email', 'max:255',
                 Rule::unique('users', 'email')->ignore($user?->id),
             ],
-            'role' => ['required', Rule::in(['admin', 'user'])],
-
-            // Required when creating; on edit, leaving it blank keeps the current password.
             'password' => [
                 $user ? 'nullable' : 'required',
                 Password::min(8)->letters()->numbers(),

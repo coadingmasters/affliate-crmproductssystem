@@ -195,7 +195,7 @@
             }
 
             if (container.querySelectorAll('.price-row').length === 1) {
-                alert('A product needs at least one price option.');
+                Modal.alert({ title: 'At least one price needed', message: 'A product must keep at least one price option. Add another before removing this one.' });
                 return;
             }
 
