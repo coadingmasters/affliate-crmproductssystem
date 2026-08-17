@@ -9,8 +9,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://cdn.tailwindcss.com"></script>
+
+{{-- Apply the saved theme before first paint so the page never flashes.
+     Light is the default; dark is opt-in via the header toggle. --}}
+<script>
+    if (localStorage.getItem('admin-theme') === 'dark') {
+        document.documentElement.classList.add('dark');
+    }
+</script>
 <script>
     tailwind.config = {
+        darkMode: 'class',
         theme: {
             extend: {
                 colors: {
@@ -60,7 +69,30 @@
         --sidebar:  23 31 47;
     }
 
+    /*
+     | Optional dark theme. Light is the default; this only applies when the
+     | admin turns it on with the header toggle.
+     */
+    html.dark {
+        --surface:  12 15 20;
+        --card:     22 26 34;
+        --elevated: 31 37 48;
+        --line:     44 52 67;
+        --ink:      232 236 244;
+        --muted:    148 160 180;
+        --brand:    251 146 60;
+        --brand2:   253 186 116;
+        --success:  74 222 128;
+        --warning:  251 191 36;
+        --info:     56 189 248;
+        --danger:   248 113 113;
+        --sidebar:  15 19 26;
+    }
+
     html { color-scheme: light; }
+    html.dark { color-scheme: dark; }
+
+    body { transition: background-color .3s ease, color .3s ease; }
 
     /* ---------- Entrance animations ---------- */
     @keyframes rise {
