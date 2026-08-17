@@ -71,6 +71,7 @@ class DemoOrderSeeder extends Seeder
                     'product_price_id' => $price->id,
                     'quantity' => $quantity,
                     'total_price' => round((float) $price->price * $quantity, 2),
+                    'commission_total' => round((float) $price->commission * $quantity, 2),
                     'status' => $this->status($daysAgo),
                 ]);
 

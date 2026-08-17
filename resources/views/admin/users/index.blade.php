@@ -138,7 +138,7 @@
     </div>
 
     @if ($users->hasPages())
-        <div class="mt-5">{{ $users->links() }}</div>
+        <div class="mt-5">{{ $users->links('vendor.pagination.admin') }}</div>
     @endif
 @endsection
 

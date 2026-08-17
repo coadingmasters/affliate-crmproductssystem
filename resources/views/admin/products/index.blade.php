@@ -105,6 +105,6 @@
     </div>
 
     @if ($products->hasPages())
-        <div class="mt-5">{{ $products->links() }}</div>
+        <div class="mt-5">{{ $products->links('vendor.pagination.admin') }}</div>
     @endif
 @endsection
