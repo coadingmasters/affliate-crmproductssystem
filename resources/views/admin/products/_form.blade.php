@@ -92,9 +92,10 @@
         @enderror
 
         <div class="mb-2 hidden grid-cols-12 gap-3 px-1 sm:grid">
-            <span class="col-span-5 text-[11px] font-semibold uppercase tracking-wide text-muted">Label</span>
-            <span class="col-span-3 text-[11px] font-semibold uppercase tracking-wide text-muted">Price</span>
-            <span class="col-span-3 text-[11px] font-semibold uppercase tracking-wide text-muted">Commission</span>
+            <span class="col-span-4 text-[11px] font-semibold uppercase tracking-wide text-muted">Label</span>
+            <span class="col-span-2 text-[11px] font-semibold uppercase tracking-wide text-muted">Price</span>
+            <span class="col-span-2 text-[11px] font-semibold uppercase tracking-wide text-success">User Commission</span>
+            <span class="col-span-3 text-[11px] font-semibold uppercase tracking-wide text-info">Admin Commission</span>
             <span class="col-span-1"></span>
         </div>
 
