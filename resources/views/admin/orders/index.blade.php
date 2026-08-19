@@ -147,8 +147,8 @@
                         <th class="px-4 py-3.5 font-medium">Price Label</th>
                         <th class="px-4 py-3.5 font-medium">Qty</th>
                         <th class="px-4 py-3.5 font-medium">Total</th>
-                        <th class="px-4 py-3.5 font-medium">User Comm.</th>
-                        <th class="px-4 py-3.5 font-medium">Admin Comm.</th>
+                        <th class="px-4 py-3.5 font-medium">User Commission</th>
+                        <th class="px-4 py-3.5 font-medium">Admin Commission</th>
                         <th class="px-4 py-3.5 font-medium">Status</th>
                         <th class="px-4 py-3.5 font-medium">Submitted</th>
                     </tr>

@@ -133,8 +133,8 @@
                                 <th class="px-5 py-3 font-medium">Option</th>
                                 <th class="px-5 py-3 font-medium">Unit Price</th>
                                 <th class="px-5 py-3 font-medium">Qty</th>
-                                <th class="px-5 py-3 font-medium">User Comm.</th>
-                                <th class="px-5 py-3 font-medium">Admin Comm.</th>
+                                <th class="px-5 py-3 font-medium">User Commission</th>
+                                <th class="px-5 py-3 font-medium">Admin Commission</th>
                                 <th class="px-5 py-3 text-right font-medium sm:px-6">Total</th>
                             </tr>
                         </thead>

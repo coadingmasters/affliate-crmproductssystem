@@ -28,30 +28,14 @@
         @endforeach
     </div>
 
-    <div class="rise mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2" style="--delay: 140ms">
-        <div class="flex items-center justify-between gap-3 rounded-2xl border border-brand/25 bg-gradient-to-r from-brand/10 to-brand2/10 px-5 py-4">
-            <div>
-                <p class="text-xs font-medium uppercase tracking-wider text-muted">Total Ordered</p>
-                <p class="text-xs text-muted">On completed orders</p>
-            </div>
-            <p class="text-2xl font-extrabold tracking-tight text-brand">${{ number_format($totalSpent, 2) }}</p>
+    <div class="rise mb-5 flex items-center justify-between gap-3 rounded-2xl border border-brand/25 bg-gradient-to-r from-brand/10 to-brand2/10 px-5 py-4" style="--delay: 140ms">
+        <div>
+            <p class="text-xs font-medium uppercase tracking-wider text-muted">Total Ordered</p>
+            <p class="text-xs text-muted">On completed orders</p>
         </div>
-
-        <div class="flex items-center justify-between gap-3 rounded-2xl border border-success/30 bg-success/10 px-5 py-4">
-            <div>
-                <p class="text-xs font-medium uppercase tracking-wider text-muted">Commission Earned</p>
-                <p class="text-xs text-muted">Paid once settled</p>
-            </div>
-            <p class="text-2xl font-extrabold tracking-tight text-success">${{ number_format($commissionEarned, 2) }}</p>
-        </div>
+        <p class="text-2xl font-extrabold tracking-tight text-brand">${{ number_format($totalSpent, 2) }}</p>
     </div>
 
-    @if ($commissionPending > 0)
-        <div class="rise mb-5 flex items-center justify-between gap-3 rounded-xl border border-line bg-card/80 px-4 py-3 backdrop-blur" style="--delay: 170ms">
-            <span class="text-xs text-muted">Commission still in progress</span>
-            <span class="text-sm font-bold text-ink">${{ number_format($commissionPending, 2) }}</span>
-        </div>
-    @endif
 
     {{-- Orders --}}
     <div class="rise space-y-3" style="--delay: 200ms">
@@ -86,11 +70,6 @@
                     </div>
                     <div class="text-right">
                         <p class="text-xl font-extrabold tracking-tight text-brand">${{ number_format($order->total_price, 2) }}</p>
-                        @if ($order->user_commission_total > 0)
-                            <p class="mt-0.5 text-xs font-semibold text-success">
-                                You earn ${{ number_format($order->user_commission_total, 2) }}
-                            </p>
-                        @endif
                     </div>
                 </div>
 

@@ -127,23 +127,14 @@
 
                     @endforeach
 
-                    {{-- Totals always sit at the end --}}
-                    <div>
+                    {{-- Total always sits at the end. Commission is admin-only. --}}
+                    <div class="sm:col-span-2">
                         <label for="total_display" class="mb-1.5 block text-sm font-medium text-ink">Total Price</label>
                         <div class="flex h-[42px] items-center justify-between rounded-xl border border-brand/25 bg-gradient-to-r from-brand/10 to-brand2/10 px-3.5">
                             <span class="text-xs font-medium text-muted">USD</span>
                             <span id="total_display" class="text-lg font-extrabold tracking-tight text-brand">$0.00</span>
                         </div>
                         <p class="mt-1.5 text-xs text-muted">Confirmed when we contact you.</p>
-                    </div>
-
-                    <div>
-                        <label for="commission_display" class="mb-1.5 block text-sm font-medium text-ink">Your Commission</label>
-                        <div class="flex h-[42px] items-center justify-between rounded-xl border border-success/30 bg-success/10 px-3.5">
-                            <span class="text-xs font-medium text-muted">You earn</span>
-                            <span id="commission_display" class="text-lg font-extrabold tracking-tight text-success">$0.00</span>
-                        </div>
-                        <p class="mt-1.5 text-xs text-muted">Paid once the order is settled.</p>
                     </div>
                 </div>
 
@@ -186,7 +177,6 @@
         const priceSelect = document.getElementById('product_price_id');
         const quantityInput = document.getElementById('quantity');
         const totalDisplay = document.getElementById('total_display');
-        const commissionDisplay = document.getElementById('commission_display');
         const submitButton = document.getElementById('submit-btn');
 
         const pricesUrl = @json(route('products.prices', ['product' => '__PRODUCT__']));
@@ -209,12 +199,10 @@
 
             const option = priceSelect.selectedOptions[0];
             const unitPrice = option && option.dataset.price ? parseFloat(option.dataset.price) : 0;
-            const unitCommission = option && option.dataset.commission ? parseFloat(option.dataset.commission) : 0;
             const qty = parseInt(quantityInput ? quantityInput.value : '0', 10);
             const count = qty > 0 ? qty : 0;
 
             flash(totalDisplay, money(unitPrice * count));
-            flash(commissionDisplay, money(unitCommission * count));
         }
 
         function setPlaceholder(text, disabled) {
@@ -257,10 +245,8 @@
                 prices.forEach(function (price) {
                     const option = document.createElement('option');
                     option.value = price.id;
-                    option.textContent = price.label + ' — ' + money(price.price)
-                        + (price.commission > 0 ? '  (earn ' + money(price.commission) + ')' : '');
+                    option.textContent = price.label + ' — ' + money(price.price);
                     option.dataset.price = price.price;
-                    option.dataset.commission = price.commission;
                     option.selected = String(price.id) === String(preselectId);
                     priceSelect.appendChild(option);
                 });

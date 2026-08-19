@@ -127,7 +127,7 @@
                     </div>
 
                     <div class="col-span-4 sm:col-span-2">
-                        <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">User Comm.</label>
+                        <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">User Commission</label>
                         <div class="relative">
                             <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-success">$</span>
                             <input type="number" step="0.01" min="0" name="prices[{{ $index }}][user_commission]" value="{{ $row['user_commission'] ?? '' }}"
@@ -140,7 +140,7 @@
                     </div>
 
                     <div class="col-span-4 sm:col-span-3">
-                        <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">Admin Comm.</label>
+                        <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">Admin Commission</label>
                         <div class="relative">
                             <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-info">$</span>
                             <input type="number" step="0.01" min="0" name="prices[{{ $index }}][admin_commission]" value="{{ $row['admin_commission'] ?? '' }}"
@@ -199,7 +199,7 @@
         </div>
 
         <div class="col-span-4 sm:col-span-2">
-            <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">User Comm.</label>
+            <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">User Commission</label>
             <div class="relative">
                 <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-success">$</span>
                 <input type="number" step="0.01" min="0" name="prices[__INDEX__][user_commission]" placeholder="0.00"
@@ -208,7 +208,7 @@
         </div>
 
         <div class="col-span-4 sm:col-span-3">
-            <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">Admin Comm.</label>
+            <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">Admin Commission</label>
             <div class="relative">
                 <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-info">$</span>
                 <input type="number" step="0.01" min="0" name="prices[__INDEX__][admin_commission]" placeholder="0.00"
