@@ -17,6 +17,8 @@ class CustomerOnly
     public function handle(Request $request, Closure $next): Response
     {
         if ($request->user()?->isAdmin()) {
+            $request->session()->forget('url.intended');
+
             return redirect()->route('admin.dashboard');
         }
 

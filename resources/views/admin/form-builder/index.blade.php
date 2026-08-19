@@ -28,7 +28,7 @@
 
         {{-- Palette --}}
         <aside class="rise lg:col-span-3" style="--delay: 60ms">
-            <div class="rounded-2xl border border-line bg-card p-4 lg:sticky lg:top-20">
+            <div class="rounded-2xl border border-line bg-card p-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
                 <h2 class="mb-1 text-sm font-semibold text-ink">Fields</h2>
                 <p class="mb-3 text-xs text-muted">Drag onto the form, or click to add.</p>
 
@@ -54,12 +54,14 @@
         {{-- Canvas --}}
         <section class="rise lg:col-span-6" style="--delay: 120ms">
             <div class="rounded-2xl border border-line bg-card p-4 sm:p-5">
-                <div class="mb-4 flex items-center justify-between">
+                <div class="sticky top-16 z-10 -mx-4 mb-3 flex items-center justify-between border-b border-line bg-card px-4 pb-3 sm:-mx-5 sm:px-5">
                     <h2 class="text-sm font-semibold text-ink">Your Form</h2>
                     <span id="field-count" class="rounded-full bg-elevated px-2.5 py-1 text-xs font-medium text-muted"></span>
                 </div>
 
-                <div id="canvas" class="min-h-[220px] space-y-2"></div>
+                {{-- Scrolls within itself so a long form does not push the
+                     palette and settings panels off screen. --}}
+                <div id="canvas" class="min-h-[220px] space-y-2 lg:max-h-[calc(100vh-13rem)] lg:overflow-y-auto lg:pr-1"></div>
 
                 <div id="empty-hint" class="hidden rounded-xl border-2 border-dashed border-line py-12 text-center">
                     <p class="text-sm text-muted">Drop fields here</p>
@@ -69,7 +71,7 @@
 
         {{-- Settings --}}
         <aside class="rise lg:col-span-3" style="--delay: 180ms">
-            <div id="settings" class="rounded-2xl border border-line bg-card p-4 lg:sticky lg:top-20">
+            <div id="settings" class="rounded-2xl border border-line bg-card p-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
                 <h2 class="mb-3 text-sm font-semibold text-ink">Field Settings</h2>
                 <p id="settings-empty" class="rounded-xl border border-dashed border-line px-3 py-8 text-center text-xs text-muted">
                     Select a field to edit it
@@ -141,7 +143,7 @@
                         ${meta.label} &middot; ${field.width === 'full' ? 'full width' : 'half width'}${locked ? ' &middot; built in' : ''}
                     </span>
                 </span>
-                ${special ? '<span class="rounded-md bg-info/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-info">order</span>' : ''}
+                ${special ? '<span class="rounded-md bg-info/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-info" title="Filled in automatically from your products">auto</span>' : ''}
                 ${locked
                     ? '<span class="text-muted" title="Built in field, cannot be deleted"><svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></span>'
                     : `<button type="button" class="remove-field rounded-lg p-1.5 text-muted transition hover:bg-danger/10 hover:text-danger" title="Remove">
@@ -249,12 +251,22 @@
                 ${locked ? '<p class="mt-1 text-[11px] text-muted">Built in fields keep their type.</p>' : ''}
             </div>
 
-            ${meta.has_options ? `
+            ${SPECIAL.includes(field.key) ? `
+            <div class="rounded-xl border border-info/30 bg-info/10 p-3">
+                <p class="text-xs font-semibold text-ink">Filled in automatically</p>
+                <p class="mt-1 text-[11px] text-muted">
+                    ${field.key === 'product'
+                        ? 'Every active product appears here on the storefront. Manage them under Products.'
+                        : field.key === 'package'
+                            ? 'Loads the packages of the product the customer picks, with live pricing.'
+                            : 'Controlled by the order form.'}
+                </p>
+            </div>` : (meta.has_options ? `
             <div>
                 <label class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Options</label>
                 <textarea id="s-options" rows="4" placeholder="One per line" class="${input}">${esc((field.options || []).join('\n'))}</textarea>
                 <p class="mt-1 text-[11px] text-muted">One choice per line.</p>
-            </div>` : ''}
+            </div>` : '')}
 
             ${['select','radio','checkbox','file'].includes(field.type) ? '' : `
             <div>

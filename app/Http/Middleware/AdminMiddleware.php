@@ -16,6 +16,9 @@ class AdminMiddleware
         $user = $request->user();
 
         if (! $user || ! $user->isAdmin()) {
+            // Drop any remembered admin URL so a later login is not diverted.
+            $request->session()->forget('url.intended');
+
             return redirect('/');
         }
 

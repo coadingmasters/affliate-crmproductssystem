@@ -35,12 +35,16 @@ class CustomerAuthController extends Controller
 
         $request->session()->regenerate();
 
-        // Admins belong in the admin panel.
+        // A guest who touched an admin URL leaves an "intended" address behind.
+        // Honouring it would throw a customer at the admin panel, so drop it
+        // and send each account straight to its own side of the system.
+        $request->session()->forget('url.intended');
+
         if ($request->user()->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
 
-        return redirect()->intended(route('order.create'));
+        return redirect()->route('order.create');
     }
 
     /**
