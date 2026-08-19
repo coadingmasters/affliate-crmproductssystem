@@ -18,6 +18,8 @@ class FormBuilderController extends Controller
      */
     public function index(): View
     {
+        $this->ensureSystemFields();
+
         return view('admin.form-builder.index', [
             'fields' => FormField::orderBy('sort_order')->get(),
             'types' => FormField::TYPES,
@@ -113,6 +115,41 @@ class FormBuilderController extends Controller
             'message' => 'Form saved.',
             'fields' => FormField::orderBy('sort_order')->get(),
         ]);
+    }
+
+    /**
+     * Make sure the built in fields exist.
+     *
+     * The order form cannot function without product, package and quantity,
+     * so if they are missing, for instance because the seeder never ran on a
+     * new environment, they are recreated rather than leaving a broken form.
+     */
+    private function ensureSystemFields(): void
+    {
+        $defaults = [
+            ['key' => 'full_name', 'type' => 'text', 'label' => 'Full Name', 'placeholder' => 'John Smith'],
+            ['key' => 'email', 'type' => 'email', 'label' => 'Email', 'placeholder' => 'john@example.com'],
+            ['key' => 'phone', 'type' => 'tel', 'label' => 'Phone', 'placeholder' => '(555) 123 4567'],
+            ['key' => 'address', 'type' => 'textarea', 'label' => 'Address', 'placeholder' => '1234 MAIN ST APT 5, LOS ANGELES CA 90001'],
+            ['key' => 'product', 'type' => 'select', 'label' => 'Select Product', 'placeholder' => null],
+            ['key' => 'package', 'type' => 'select', 'label' => 'Select Price / Package', 'placeholder' => null],
+            ['key' => 'quantity', 'type' => 'number', 'label' => 'Quantity', 'placeholder' => null],
+        ];
+
+        foreach ($defaults as $index => $field) {
+            if (FormField::where('key', $field['key'])->exists()) {
+                continue;
+            }
+
+            FormField::create([
+                ...$field,
+                'is_system' => true,
+                'is_required' => true,
+                'is_active' => true,
+                'width' => 'half',
+                'sort_order' => $index,
+            ]);
+        }
     }
 
     /**
