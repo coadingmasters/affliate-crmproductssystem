@@ -25,7 +25,27 @@ class UpdateOrderRequest extends FormRequest
     {
         return [
             'status' => ['required', Rule::in(Order::statuses())],
+
+            // Only meaningful for the Post Date status, and required there.
+            'post_date' => [
+                Rule::requiredIf(fn () => $this->input('status') === 'post_date'),
+                'nullable',
+                'date',
+            ],
+
             'notes' => ['nullable', 'string', 'max:5000'],
+        ];
+    }
+
+    /**
+     * Get the custom validation messages.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'post_date.required' => 'Enter the date the customer will pay.',
         ];
     }
 }

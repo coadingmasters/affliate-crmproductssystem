@@ -28,7 +28,7 @@
     <form method="GET" action="{{ route('admin.orders.index') }}" id="filter-form"
           class="rise mb-4 rounded-2xl border border-line bg-card p-4 sm:p-5" style="--delay: 60ms">
 
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <div class="sm:col-span-2 xl:col-span-1">
                 <label for="q" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Search</label>
                 <div class="relative">
@@ -61,6 +61,16 @@
             </div>
 
             <div>
+                <label for="status" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Status</label>
+                <select name="status" id="status" class="{{ $input }}">
+                    <option value="all">All statuses</option>
+                    @foreach ($statusMeta as $value => $meta)
+                        <option value="{{ $value }}" @selected($filters['status'] === $value)>{{ $meta['label'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
                 <label for="sort" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Sort by</label>
                 <select name="sort" id="sort" class="{{ $input }}">
                     @foreach ($sorts as $value => $label)
@@ -82,25 +92,6 @@
             </div>
         </div>
 
-        {{-- Status pills --}}
-        <div class="mt-4">
-            <p class="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted">Status</p>
-            <input type="hidden" name="status" id="status-input" value="{{ $filters['status'] }}">
-            <div class="-mx-1 overflow-x-auto px-1">
-                <div class="inline-flex min-w-max gap-1 rounded-xl border border-line bg-elevated p-1">
-                    @php $statusOptions = ['all' => 'All'] + collect($statusMeta)->map(fn ($m) => $m['label'])->all(); @endphp
-                    @foreach ($statusOptions as $value => $label)
-                        <button type="button" data-status="{{ $value }}"
-                                class="status-pill whitespace-nowrap rounded-lg px-3.5 py-1.5 text-sm font-medium transition
-                                       {{ $filters['status'] === $value
-                                           ? 'bg-gradient-to-r from-accent to-accent2 text-white shadow-md shadow-accent/25'
-                                           : 'text-muted hover:bg-card hover:text-ink' }}">
-                            {{ $label }}
-                        </button>
-                    @endforeach
-                </div>
-            </div>
-        </div>
 
         <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-4">
             <button type="submit"
@@ -163,7 +154,11 @@
                                 <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $order->statusClasses() }}">
                                     {{ $order->statusLabel() }}
                                 </span>
-                                @if ($order->statusChangedAt())
+                                @if ($order->post_date)
+                                    <span class="mt-1 block whitespace-nowrap text-xs font-medium text-info">
+                                        Pays {{ $order->postDateLabel() }}
+                                    </span>
+                                @elseif ($order->statusChangedAt())
                                     <span class="mt-1 block whitespace-nowrap text-xs text-muted">
                                         {{ $order->statusChangedAt()->format('M j, g:i A') }}
                                     </span>
@@ -215,17 +210,8 @@
 <script>
     (function () {
         const form = document.getElementById('filter-form');
-        const statusInput = document.getElementById('status-input');
         const period = document.getElementById('period');
         const customRange = document.getElementById('custom-range');
-
-        // Status pills write into the hidden field, then submit.
-        document.querySelectorAll('.status-pill').forEach(function (pill) {
-            pill.addEventListener('click', function () {
-                statusInput.value = pill.dataset.status;
-                form.submit();
-            });
-        });
 
         // Show the date inputs only for a custom range.
         period.addEventListener('change', function () {
@@ -239,7 +225,7 @@
         });
 
         // These apply immediately; the search box waits for Apply.
-        ['product_id', 'sort', 'per_page'].forEach(function (id) {
+        ['status', 'product_id', 'sort', 'per_page'].forEach(function (id) {
             document.getElementById(id).addEventListener('change', function () {
                 form.submit();
             });

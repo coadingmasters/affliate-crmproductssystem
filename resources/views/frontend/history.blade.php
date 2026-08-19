@@ -73,6 +73,11 @@
                         <p class="mt-1 text-sm text-muted">
                             Submitted {{ $order->submittedAtLabel() }}
                         </p>
+                        @if ($order->post_date)
+                            <p class="mt-0.5 text-xs font-semibold text-brand">
+                                Payment due {{ $order->postDateLabel() }}
+                            </p>
+                        @endif
                         @if ($order->statusChangedAtLabel())
                             <p class="mt-0.5 text-xs text-muted">
                                 {{ $label }} on {{ $order->statusChangedAtLabel() }}

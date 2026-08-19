@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'total_price',
     'commission_total',
     'status',
+    'post_date',
     'notes',
 ])]
 class Order extends Model
@@ -28,26 +29,38 @@ class Order extends Model
      * @var array<string, array{label: string, tone: string, customer: string}>
      */
     public const STATUS_META = [
-        'new'       => ['label' => 'New',       'tone' => 'warning', 'customer' => 'Received'],
-        'sale'      => ['label' => 'Sale',      'tone' => 'success', 'customer' => 'Confirmed'],
-        'post_sale' => ['label' => 'Post Sale', 'tone' => 'info',    'customer' => 'Completed'],
-        'cancel'    => ['label' => 'Cancel',    'tone' => 'danger',  'customer' => 'Cancelled'],
+        'new'                     => ['label' => 'New',                     'tone' => 'warning', 'customer' => 'Received'],
+        'callback'                => ['label' => 'Callback',                'tone' => 'brand',   'customer' => 'Callback scheduled'],
+        'confirmation_department' => ['label' => 'Confirmation Department', 'tone' => 'info',    'customer' => 'In review'],
+        'post_date'               => ['label' => 'Post Date',               'tone' => 'info',    'customer' => 'Scheduled'],
+        'awaiting_payment'        => ['label' => 'Awaiting Payment',        'tone' => 'warning', 'customer' => 'Awaiting payment'],
+        'sale'                    => ['label' => 'Sale',                    'tone' => 'success', 'customer' => 'Confirmed'],
+        'active_account'          => ['label' => 'Active Account',          'tone' => 'success', 'customer' => 'Active'],
+        'going_to_return'         => ['label' => 'Going to Return',         'tone' => 'danger',  'customer' => 'Return in progress'],
+        'card_declined'           => ['label' => 'Card Declined',           'tone' => 'danger',  'customer' => 'Payment declined'],
+        'confirmation_failure'    => ['label' => 'Confirmation Failure',    'tone' => 'danger',  'customer' => 'Could not confirm'],
+        'duplicate'               => ['label' => 'Duplicate',               'tone' => 'muted',   'customer' => 'Duplicate order'],
+        'cancelled'               => ['label' => 'Cancelled',               'tone' => 'danger',  'customer' => 'Cancelled'],
     ];
 
     /**
      * Statuses that count as a converted sale, and so earn commission.
      */
-    public const EARNING_STATUSES = ['sale', 'post_sale'];
+    public const EARNING_STATUSES = ['sale', 'active_account'];
 
     /**
-     * Statuses still awaiting an outcome.
+     * Statuses still working towards an outcome.
      */
-    public const OPEN_STATUSES = ['new'];
+    public const OPEN_STATUSES = [
+        'new', 'callback', 'confirmation_department', 'post_date', 'awaiting_payment',
+    ];
 
     /**
      * Statuses that ended without a sale.
      */
-    public const LOST_STATUSES = ['cancel'];
+    public const LOST_STATUSES = [
+        'going_to_return', 'card_declined', 'confirmation_failure', 'duplicate', 'cancelled',
+    ];
 
     /**
      * Every valid status key.
@@ -71,6 +84,7 @@ class Order extends Model
             'total_price' => 'decimal:2',
             'commission_total' => 'decimal:2',
             'status_changed_at' => 'datetime',
+            'post_date' => 'date',
         ];
     }
 
@@ -186,6 +200,14 @@ class Order extends Model
     }
 
     /**
+     * The agreed payment date, e.g. "Aug 25, 2026", or null.
+     */
+    public function postDateLabel(): ?string
+    {
+        return $this->post_date?->format('M j, Y');
+    }
+
+    /**
      * How far through the pipeline this order is, as a percentage.
      */
     public function progress(): int
@@ -194,7 +216,7 @@ class Order extends Model
             return 100;
         }
 
-        $steps = ['new', 'sale', 'post_sale'];
+        $steps = ['new', 'callback', 'confirmation_department', 'awaiting_payment', 'sale', 'active_account'];
         $position = array_search($this->status, $steps, true);
 
         return $position === false ? 0 : (int) round(($position + 1) / count($steps) * 100);

@@ -63,6 +63,15 @@
                             @endif
                         </dd>
                     </div>
+                    @if ($order->post_date)
+                        <div>
+                            <dt class="text-xs uppercase tracking-wider text-muted">Payment Date</dt>
+                            <dd class="mt-1 text-sm font-medium text-ink">
+                                {{ $order->postDateLabel() }}
+                                <span class="block text-xs font-normal text-muted">{{ $order->post_date->diffForHumans() }}</span>
+                            </dd>
+                        </div>
+                    @endif
                     <div>
                         <dt class="text-xs uppercase tracking-wider text-muted">Account</dt>
                         <dd class="mt-1 text-sm font-medium text-ink">
@@ -142,6 +151,21 @@
                         @enderror
                     </div>
 
+                    {{-- Shown only for the Post Date status: when the customer pays --}}
+                    <div id="post-date-field" class="{{ old('status', $order->status) === 'post_date' ? '' : 'hidden' }}">
+                        <label for="post_date" class="mb-1.5 block text-sm font-medium text-ink">
+                            Payment Date
+                            <span class="font-normal text-muted">&mdash; when the customer will pay</span>
+                        </label>
+                        <input type="date" name="post_date" id="post_date"
+                               value="{{ old('post_date', $order->post_date?->format('Y-m-d')) }}"
+                               class="w-full rounded-xl border bg-elevated px-3.5 py-2.5 text-sm text-ink transition focus:outline-none focus:ring-2 focus:ring-accent/30
+                                      {{ $errors->has('post_date') ? 'border-danger' : 'border-line focus:border-accent' }}">
+                        @error('post_date')
+                            <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <div>
                         <label for="notes" class="mb-1.5 block text-sm font-medium text-ink">Internal Notes</label>
                         <textarea name="notes" id="notes" rows="7"
@@ -162,3 +186,25 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    (function () {
+        const status = document.getElementById('status');
+        const field = document.getElementById('post-date-field');
+
+        if (!status || !field) {
+            return;
+        }
+
+        status.addEventListener('change', function () {
+            const needsDate = status.value === 'post_date';
+            field.classList.toggle('hidden', !needsDate);
+
+            if (needsDate) {
+                field.querySelector('input').focus();
+            }
+        });
+    })();
+</script>
+@endpush
