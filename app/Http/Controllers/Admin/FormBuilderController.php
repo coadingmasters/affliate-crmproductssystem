@@ -25,6 +25,20 @@ class FormBuilderController extends Controller
     }
 
     /**
+     * Render the live form exactly as a customer sees it.
+     *
+     * The storefront itself redirects admins away, so preview needs its own
+     * route inside the admin area.
+     */
+    public function preview(): View
+    {
+        return view('admin.form-builder.preview', [
+            'fields' => FormField::visible()->get(),
+            'products' => \App\Models\Product::active()->orderBy('name')->get(),
+        ]);
+    }
+
+    /**
      * Save the whole layout in one go.
      *
      * The builder posts the complete field list, so this replaces the saved

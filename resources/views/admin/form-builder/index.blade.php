@@ -10,7 +10,7 @@
         </p>
 
         <div class="flex items-center gap-2">
-            <a href="{{ route('order.create') }}" target="_blank" rel="noopener"
+            <a href="{{ route('admin.form-builder.preview') }}" target="_blank" rel="noopener"
                class="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-muted transition hover:border-accent hover:text-accent">
                 Preview
             </a>

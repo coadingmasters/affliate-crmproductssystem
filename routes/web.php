@@ -63,6 +63,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UserController::class)->except('show');
 
         Route::get('form-builder', [FormBuilderController::class, 'index'])->name('form-builder');
+        Route::get('form-builder/preview', [FormBuilderController::class, 'preview'])->name('form-builder.preview');
         Route::post('form-builder', [FormBuilderController::class, 'save'])->name('form-builder.save');
 
         Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');

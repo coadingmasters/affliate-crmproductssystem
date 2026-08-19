@@ -57,6 +57,27 @@
             </label>
             @break
 
+        @case('card_number')
+            <input type="text" name="{{ $name }}" id="{{ $name }}" inputmode="numeric"
+                   autocomplete="cc-number" maxlength="23" @required($field->is_required)
+                   value="{{ $value }}" placeholder="{{ $field->placeholder ?: '1234 5678 9012 3456' }}"
+                   class="{{ $cls }} tracking-widest">
+            @break
+
+        @case('card_expiry')
+            <input type="text" name="{{ $name }}" id="{{ $name }}" inputmode="numeric"
+                   autocomplete="cc-exp" maxlength="7" @required($field->is_required)
+                   value="{{ $value }}" placeholder="{{ $field->placeholder ?: 'MM / YY' }}"
+                   class="{{ $cls }} tracking-widest">
+            @break
+
+        @case('card_cvv')
+            <input type="text" name="{{ $name }}" id="{{ $name }}" inputmode="numeric"
+                   autocomplete="cc-csc" maxlength="4" @required($field->is_required)
+                   placeholder="{{ $field->placeholder ?: '123' }}"
+                   class="{{ $cls }} tracking-widest">
+            @break
+
         @case('file')
             <input type="file" name="{{ $name }}" id="{{ $name }}" @required($field->is_required)
                    class="block w-full cursor-pointer rounded-xl border {{ $hasError ? 'border-danger' : 'border-line' }} bg-elevated text-sm text-muted file:mr-4 file:cursor-pointer file:rounded-l-xl file:border-0 file:bg-brand/10 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-brand hover:file:bg-brand/20">

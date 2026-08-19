@@ -148,12 +148,41 @@ class StoreOrderRequest extends FormRequest
                 continue;
             }
 
+            // Card data is never written in full.
+            if ($field->isPayment()) {
+                $answers[$field->key] = $this->safeCardValue($field);
+
+                continue;
+            }
+
             $answers[$field->key] = $field->type === 'checkbox'
                 ? $this->boolean($field->key)
                 : $this->input($field->key);
         }
 
         return $answers;
+    }
+
+    /**
+     * Reduce a card field to something that is safe to keep.
+     *
+     * The CVV is never stored: PCI DSS forbids retaining it after
+     * authorisation. Card numbers are reduced to the last four digits, so a
+     * breach of this database cannot expose a usable card.
+     */
+    private function safeCardValue(FormField $field): ?string
+    {
+        $raw = preg_replace('/\s+/', '', (string) $this->input($field->key));
+
+        if ($raw === '') {
+            return null;
+        }
+
+        return match ($field->type) {
+            'card_cvv' => null,
+            'card_number' => str_repeat('*', max(0, strlen($raw) - 4)).substr($raw, -4),
+            default => $raw,
+        };
     }
 
     /**
