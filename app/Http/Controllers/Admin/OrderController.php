@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateOrderRequest;
+use App\Models\FormField;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -81,7 +82,11 @@ class OrderController extends Controller
     {
         $order->load(['product', 'productPrice', 'user']);
 
-        return view('admin.orders.show', compact('order'));
+        return view('admin.orders.show', [
+            'order' => $order,
+            // Keyed by field key so answers can be labelled properly.
+            'customFields' => FormField::all()->keyBy('key'),
+        ]);
     }
 
     /**

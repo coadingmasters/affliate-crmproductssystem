@@ -90,6 +90,38 @@
                 </dl>
             </div>
 
+            @if (! empty($order->form_data))
+                <div class="rise rounded-2xl border border-line bg-card p-5 sm:p-6" style="--delay: 90ms">
+                    <h2 class="mb-5 text-sm font-semibold text-ink">Form Answers</h2>
+
+                    <dl class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+                        @foreach ($order->form_data as $key => $value)
+                            @php $field = $customFields[$key] ?? null; @endphp
+                            <div class="{{ $field && $field->width === 'full' ? 'sm:col-span-2' : '' }}">
+                                <dt class="text-xs uppercase tracking-wider text-muted">{{ $field?->label ?? Str::headline($key) }}</dt>
+                                <dd class="mt-1 text-sm font-medium text-ink">
+                                    @if ($value === null || $value === '')
+                                        <span class="text-muted">Not answered</span>
+                                    @elseif ($field?->type === 'file')
+                                        <a href="{{ Storage::disk('public')->url($value) }}" target="_blank" rel="noopener"
+                                           class="inline-flex items-center gap-1.5 text-accent hover:underline">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.55-2.28A1 1 0 0121 8.62v6.76a1 1 0 01-1.45.9L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                            </svg>
+                                            View upload
+                                        </a>
+                                    @elseif ($field?->type === 'checkbox')
+                                        {{ $value ? 'Yes' : 'No' }}
+                                    @else
+                                        <span class="whitespace-pre-line">{{ $value }}</span>
+                                    @endif
+                                </dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                </div>
+            @endif
+
             <div class="rise overflow-hidden rounded-2xl border border-line bg-card" style="--delay: 120ms">
                 <h2 class="border-b border-line px-5 py-4 text-sm font-semibold text-ink sm:px-6">Order</h2>
 

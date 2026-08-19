@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrderRequest;
+use App\Models\FormField;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
@@ -19,6 +20,7 @@ class OrderController extends Controller
     {
         return view('frontend.order', [
             'products' => Product::active()->orderBy('name')->get(),
+            'fields' => FormField::visible()->get(),
         ]);
     }
 
@@ -95,15 +97,9 @@ class OrderController extends Controller
         Order::create([
             // Tie the order to the signed in account.
             'user_id' => $request->user()->id,
-            ...$request->safe()->only([
-                'full_name',
-                'email',
-                'phone',
-                'address',
-                'product_id',
-                'product_price_id',
-                'quantity',
-            ]),
+            ...$request->columnAnswers(),
+            ...$request->safe()->only(['product_id', 'product_price_id', 'quantity']),
+            'form_data' => $request->customAnswers(),
             // Never trust the figures that came from the browser.
             'total_price' => $request->total(),
             'user_commission_total' => $request->userCommission(),

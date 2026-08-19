@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'status',
     'post_date',
     'notes',
+    'form_data',
 ])]
 class Order extends Model
 {
@@ -87,6 +88,7 @@ class Order extends Model
             'admin_commission_total' => 'decimal:2',
             'status_changed_at' => 'datetime',
             'post_date' => 'date',
+            'form_data' => 'array',
         ];
     }
 

@@ -3,19 +3,20 @@
 @section('title', 'Place Your Order · Med Alert')
 
 @php
-    $base = 'field w-full rounded-xl border bg-elevated px-3.5 py-2.5 text-sm text-ink placeholder-muted';
-    $ok = 'border-line';
-    $bad = 'border-danger';
+    $cls = fn (string $f) => 'field w-full rounded-xl border bg-elevated px-3.5 py-2.5 text-sm text-ink placeholder-muted '
+        .($errors->has($f) ? 'border-danger' : 'border-line');
 
-    // Small helper so every field styles its error state the same way.
-    $cls = fn (string $field) => $base.' '.($errors->has($field) ? $bad : $ok);
+    // Prefill the account holder's own details.
+    $prefills = [
+        'full_name' => auth()->user()->name,
+        'email' => auth()->user()->email,
+    ];
 @endphp
 
 @section('content')
 
     @include('partials.account-bar')
 
-    {{-- Brand header --}}
     <div class="rise mb-5 flex items-center justify-center gap-3">
         <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand2 text-lg font-bold text-white shadow-lg shadow-brand/30">
             <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -52,144 +53,102 @@
                 <p class="text-sm font-medium text-ink">No products are available right now.</p>
                 <p class="mt-1 text-sm text-muted">Please check back soon.</p>
             </div>
+        @elseif ($fields->isEmpty())
+            <div class="py-10 text-center">
+                <p class="text-sm font-medium text-ink">This form has not been set up yet.</p>
+                <p class="mt-1 text-sm text-muted">Please contact your administrator.</p>
+            </div>
         @else
-            <form method="POST" action="{{ route('order.store') }}" id="order-form" class="space-y-5">
+            <form method="POST" action="{{ route('order.store') }}" id="order-form"
+                  enctype="multipart/form-data" class="space-y-5">
                 @csrf
 
-                {{-- ---------------- Contact ---------------- --}}
-                <div class="rise" style="--delay: 150ms">
-                    <div class="mb-3 flex items-center gap-2.5">
-                        <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-brand/10 text-[11px] font-bold text-brand">1</span>
-                        <h2 class="text-xs font-bold uppercase tracking-wider text-muted">Your Details</h2>
-                        <span class="h-px flex-1 bg-line"></span>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    @foreach ($fields as $field)
+
+                        @if ($field->key === 'product')
+                            <div class="{{ $field->width === 'full' ? 'sm:col-span-2' : '' }}">
+                                <label for="product_id" class="mb-1.5 block text-sm font-medium text-ink">
+                                    {{ $field->label }}<span class="text-danger">*</span>
+                                </label>
+                                <select name="product_id" id="product_id" required class="{{ $cls('product_id') }}">
+                                    <option value="">Choose a product</option>
+                                    @foreach ($products as $product)
+                                        <option value="{{ $product->id }}" @selected(old('product_id') == $product->id)>{{ $product->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('product_id')
+                                    <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                        @elseif ($field->key === 'package')
+                            <div class="{{ $field->width === 'full' ? 'sm:col-span-2' : '' }}">
+                                <label for="product_price_id" class="mb-1.5 block text-sm font-medium text-ink">
+                                    {{ $field->label }}<span class="text-danger">*</span>
+                                </label>
+                                <select name="product_price_id" id="product_price_id" required disabled
+                                        class="{{ $cls('product_price_id') }}">
+                                    <option value="">Select a product first</option>
+                                </select>
+                                @error('product_price_id')
+                                    <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                        @elseif ($field->key === 'quantity')
+                            <div class="{{ $field->width === 'full' ? 'sm:col-span-2' : '' }}">
+                                <label for="quantity" class="mb-1.5 block text-sm font-medium text-ink">
+                                    {{ $field->label }}<span class="text-danger">*</span>
+                                </label>
+                                <div class="flex items-stretch gap-2">
+                                    <button type="button" id="qty-minus" aria-label="Decrease quantity"
+                                            class="field flex w-11 shrink-0 items-center justify-center rounded-xl border border-line bg-elevated text-muted hover:border-brand hover:text-brand">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M5 12h14"/></svg>
+                                    </button>
+                                    <input type="number" name="quantity" id="quantity" value="{{ old('quantity', 1) }}"
+                                           min="1" max="1000" required class="{{ $cls('quantity') }} text-center">
+                                    <button type="button" id="qty-plus" aria-label="Increase quantity"
+                                            class="field flex w-11 shrink-0 items-center justify-center rounded-xl border border-line bg-elevated text-muted hover:border-brand hover:text-brand">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
+                                    </button>
+                                </div>
+                                @error('quantity')
+                                    <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                        @else
+                            @include('partials.form-field', [
+                                'field' => $field,
+                                'prefill' => $prefills[$field->key] ?? '',
+                            ])
+                        @endif
+
+                    @endforeach
+
+                    {{-- Totals always sit at the end --}}
+                    <div>
+                        <label for="total_display" class="mb-1.5 block text-sm font-medium text-ink">Total Price</label>
+                        <div class="flex h-[42px] items-center justify-between rounded-xl border border-brand/25 bg-gradient-to-r from-brand/10 to-brand2/10 px-3.5">
+                            <span class="text-xs font-medium text-muted">USD</span>
+                            <span id="total_display" class="text-lg font-extrabold tracking-tight text-brand">$0.00</span>
+                        </div>
+                        <p class="mt-1.5 text-xs text-muted">Confirmed when we contact you.</p>
                     </div>
 
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div>
-                            <label for="full_name" class="mb-1.5 block text-sm font-medium text-ink">Full Name</label>
-                            <input type="text" name="full_name" id="full_name"
-                                   value="{{ old('full_name', auth()->user()->name) }}" required
-                                   autocomplete="name" placeholder="John Smith" class="{{ $cls('full_name') }}">
-                            @error('full_name')
-                                <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
-                            @enderror
+                    <div>
+                        <label for="commission_display" class="mb-1.5 block text-sm font-medium text-ink">Your Commission</label>
+                        <div class="flex h-[42px] items-center justify-between rounded-xl border border-success/30 bg-success/10 px-3.5">
+                            <span class="text-xs font-medium text-muted">You earn</span>
+                            <span id="commission_display" class="text-lg font-extrabold tracking-tight text-success">$0.00</span>
                         </div>
-
-                        <div>
-                            <label for="email" class="mb-1.5 block text-sm font-medium text-ink">Email</label>
-                            <input type="email" name="email" id="email"
-                                   value="{{ old('email', auth()->user()->email) }}" required
-                                   autocomplete="email" placeholder="john@example.com" class="{{ $cls('email') }}">
-                            @error('email')
-                                <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="phone" class="mb-1.5 block text-sm font-medium text-ink">Phone</label>
-                            <input type="tel" name="phone" id="phone" value="{{ old('phone') }}" required
-                                   autocomplete="tel" placeholder="(555) 123 4567" class="{{ $cls('phone') }}">
-                            @error('phone')
-                                <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="address" class="mb-1.5 block text-sm font-medium text-ink">Address</label>
-                            <textarea name="address" id="address" rows="1" required autocomplete="street-address"
-                                      placeholder="1234 MAIN ST APT 5, LOS ANGELES CA 90001"
-                                      class="{{ $cls('address') }} resize-none leading-relaxed">{{ old('address') }}</textarea>
-                            @error('address')
-                                <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-
-                {{-- ---------------- Order ---------------- --}}
-                <div class="rise" style="--delay: 230ms">
-                    <div class="mb-3 flex items-center gap-2.5">
-                        <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-brand/10 text-[11px] font-bold text-brand">2</span>
-                        <h2 class="text-xs font-bold uppercase tracking-wider text-muted">Your Order</h2>
-                        <span class="h-px flex-1 bg-line"></span>
-                    </div>
-
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <div>
-                            <label for="product_id" class="mb-1.5 block text-sm font-medium text-ink">Select Product</label>
-                            <select name="product_id" id="product_id" required class="{{ $cls('product_id') }}">
-                                <option value="">Choose a product</option>
-                                @foreach ($products as $product)
-                                    <option value="{{ $product->id }}" @selected(old('product_id') == $product->id)>{{ $product->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('product_id')
-                                <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="product_price_id" class="mb-1.5 block text-sm font-medium text-ink">Select Price / Package</label>
-                            <select name="product_price_id" id="product_price_id" required disabled
-                                    class="{{ $cls('product_price_id') }}">
-                                <option value="">Select a product first</option>
-                            </select>
-                            @error('product_price_id')
-                                <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="quantity" class="mb-1.5 block text-sm font-medium text-ink">Quantity</label>
-                            <div class="flex items-stretch gap-2">
-                                <button type="button" id="qty-minus" aria-label="Decrease quantity"
-                                        class="field flex w-11 shrink-0 items-center justify-center rounded-xl border border-line bg-elevated text-muted hover:border-brand hover:text-brand">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" d="M5 12h14"/>
-                                    </svg>
-                                </button>
-                                <input type="number" name="quantity" id="quantity" value="{{ old('quantity', 1) }}"
-                                       min="1" max="1000" required class="{{ $cls('quantity') }} text-center">
-                                <button type="button" id="qty-plus" aria-label="Increase quantity"
-                                        class="field flex w-11 shrink-0 items-center justify-center rounded-xl border border-line bg-elevated text-muted hover:border-brand hover:text-brand">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" d="M12 5v14M5 12h14"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            @error('quantity')
-                                <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="total_display" class="mb-1.5 block text-sm font-medium text-ink">Total Price</label>
-                            <div class="flex h-[42px] items-center justify-between rounded-xl border border-brand/25 bg-gradient-to-r from-brand/10 to-brand2/10 px-3.5">
-                                <span class="text-xs font-medium text-muted">USD</span>
-                                <span id="total_display" class="text-lg font-extrabold tracking-tight text-brand">$0.00</span>
-                            </div>
-                            <p class="mt-1.5 text-xs text-muted">Confirmed when we contact you.</p>
-                        </div>
-
-                        <div class="sm:col-span-2">
-                            <label for="commission_display" class="mb-1.5 block text-sm font-medium text-ink">Your Commission</label>
-                            <div class="flex items-center justify-between rounded-xl border border-success/30 bg-success/10 px-3.5 py-2.5">
-                                <span class="flex items-center gap-2 text-xs font-medium text-muted">
-                                    <svg class="h-4 w-4 text-success" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 9v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    You earn on this order
-                                </span>
-                                <span id="commission_display" class="text-lg font-extrabold tracking-tight text-success">$0.00</span>
-                            </div>
-                            <p class="mt-1.5 text-xs text-muted">Paid once the order is delivered and settled.</p>
-                        </div>
+                        <p class="mt-1.5 text-xs text-muted">Paid once the order is settled.</p>
                     </div>
                 </div>
 
                 <button type="submit" id="submit-btn"
-                        class="cta rise flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand to-brand2 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand/30"
-                        style="--delay: 310ms">
+                        class="cta flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand to-brand2 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand/30">
                     <span id="submit-label">Submit Order</span>
                     <svg id="submit-arrow" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
@@ -209,12 +168,6 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             Secure checkout
-        </span>
-        <span class="flex items-center gap-1.5">
-            <svg class="h-3.5 w-3.5 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            24/7 support
         </span>
         <span>&copy; {{ date('Y') }} Med Alert</span>
     </div>
@@ -236,34 +189,29 @@
         const commissionDisplay = document.getElementById('commission_display');
         const submitButton = document.getElementById('submit-btn');
 
-        // Route template; the placeholder is swapped for the chosen product id.
         const pricesUrl = @json(route('products.prices', ['product' => '__PRODUCT__']));
         const oldPriceId = @json(old('product_price_id'));
 
         function money(value) {
-            return '$' + value.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            });
+            return '$' + value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         function flash(el, value) {
-            if (value === el.textContent) {
-                return;
-            }
-
+            if (!el || value === el.textContent) return;
             el.textContent = value;
             el.classList.remove('flash');
-            void el.offsetWidth; // restart the animation
+            void el.offsetWidth;
             el.classList.add('flash');
         }
 
         function updateTotal() {
+            if (!priceSelect) return;
+
             const option = priceSelect.selectedOptions[0];
             const unitPrice = option && option.dataset.price ? parseFloat(option.dataset.price) : 0;
             const unitCommission = option && option.dataset.commission ? parseFloat(option.dataset.commission) : 0;
-            const quantity = parseInt(quantityInput.value, 10);
-            const count = quantity > 0 ? quantity : 0;
+            const qty = parseInt(quantityInput ? quantityInput.value : '0', 10);
+            const count = qty > 0 ? qty : 0;
 
             flash(totalDisplay, money(unitPrice * count));
             flash(commissionDisplay, money(unitCommission * count));
@@ -279,6 +227,8 @@
         }
 
         async function loadPrices(productId, preselectId) {
+            if (!priceSelect) return;
+
             if (!productId) {
                 setPlaceholder('Select a product first', true);
                 updateTotal();
@@ -292,9 +242,7 @@
                     headers: { 'Accept': 'application/json' },
                 });
 
-                if (!response.ok) {
-                    throw new Error('Request failed with status ' + response.status);
-                }
+                if (!response.ok) throw new Error('Request failed');
 
                 const prices = await response.json();
 
@@ -323,34 +271,37 @@
             updateTotal();
         }
 
-        function nudgeQuantity(delta) {
-            const current = parseInt(quantityInput.value, 10) || 1;
-            const next = Math.min(1000, Math.max(1, current + delta));
-            quantityInput.value = next;
-            updateTotal();
+        if (productSelect) {
+            productSelect.addEventListener('change', () => loadPrices(productSelect.value, null));
         }
 
-        // Keep the address box the height of one input until it actually needs more.
-        const address = document.getElementById('address');
-
-        function autoGrow() {
-            address.style.height = 'auto';
-            address.style.height = Math.min(address.scrollHeight, 120) + 'px';
+        if (priceSelect) {
+            priceSelect.addEventListener('change', updateTotal);
         }
 
-        address.addEventListener('input', autoGrow);
-        autoGrow();
+        if (quantityInput) {
+            quantityInput.addEventListener('input', updateTotal);
 
-        productSelect.addEventListener('change', function () {
-            loadPrices(productSelect.value, null);
+            const nudge = (delta) => {
+                const current = parseInt(quantityInput.value, 10) || 1;
+                quantityInput.value = Math.min(1000, Math.max(1, current + delta));
+                updateTotal();
+            };
+
+            document.getElementById('qty-minus')?.addEventListener('click', () => nudge(-1));
+            document.getElementById('qty-plus')?.addEventListener('click', () => nudge(1));
+        }
+
+        // Auto-grow any paragraph field.
+        document.querySelectorAll('#order-form textarea').forEach(function (area) {
+            const grow = () => {
+                area.style.height = 'auto';
+                area.style.height = Math.min(area.scrollHeight, 140) + 'px';
+            };
+            area.addEventListener('input', grow);
+            grow();
         });
 
-        priceSelect.addEventListener('change', updateTotal);
-        quantityInput.addEventListener('input', updateTotal);
-        document.getElementById('qty-minus').addEventListener('click', () => nudgeQuantity(-1));
-        document.getElementById('qty-plus').addEventListener('click', () => nudgeQuantity(1));
-
-        // Guard against double submission.
         form.addEventListener('submit', function () {
             submitButton.disabled = true;
             document.getElementById('submit-label').textContent = 'Submitting…';
@@ -358,8 +309,9 @@
             document.getElementById('submit-spinner').classList.remove('hidden');
         });
 
-        // Restore the dependent dropdown when the form comes back with errors.
-        loadPrices(productSelect.value, oldPriceId);
+        if (productSelect) {
+            loadPrices(productSelect.value, oldPriceId);
+        }
     })();
 </script>
 @endpush

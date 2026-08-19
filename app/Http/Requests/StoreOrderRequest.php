@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests;
 
+use App\Models\FormField;
 use App\Models\ProductPrice;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Validator;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreOrderRequest extends FormRequest
 {
@@ -13,6 +15,11 @@ class StoreOrderRequest extends FormRequest
      * The largest total the orders.total_price column can hold.
      */
     private const MAX_TOTAL = 999999.99;
+
+    /**
+     * The admin-built form, loaded once per request.
+     */
+    private ?Collection $fields = null;
 
     /**
      * Determine if the user is authorized to make this request.
@@ -23,31 +30,52 @@ class StoreOrderRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * The fields the admin has published.
+     */
+    public function fields(): Collection
+    {
+        return $this->fields ??= FormField::visible()->get();
+    }
+
+    /**
+     * Rules come from the saved form, so adding a field in the builder
+     * validates it here without a code change.
      *
      * @return array<string, mixed>
      */
     public function rules(): array
     {
-        return [
-            'full_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255'],
-            'phone' => ['required', 'string', 'max:30'],
-            'address' => ['required', 'string', 'max:1000'],
-
-            'product_id' => [
-                'required',
-                Rule::exists('products', 'id')->where('is_active', true),
-            ],
-
-            // The price option must belong to the product that was selected.
+        $rules = [
+            'product_id' => ['required', Rule::exists('products', 'id')->where('is_active', true)],
             'product_price_id' => [
                 'required',
                 Rule::exists('product_prices', 'id')->where('product_id', $this->input('product_id')),
             ],
-
             'quantity' => ['required', 'integer', 'min:1', 'max:1000'],
         ];
+
+        foreach ($this->fields() as $field) {
+            if ($field->isSpecial()) {
+                continue;
+            }
+
+            $rules[$field->key] = $field->rules();
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Use the admin's own labels in the error messages.
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return $this->fields()
+            ->reject(fn (FormField $field) => $field->isSpecial())
+            ->mapWithKeys(fn (FormField $field) => [$field->key => strtolower($field->label)])
+            ->all();
     }
 
     /**
@@ -83,6 +111,49 @@ class StoreOrderRequest extends FormRequest
                 }
             },
         ];
+    }
+
+    /**
+     * The answers that belong in their own order columns.
+     *
+     * @return array<string, mixed>
+     */
+    public function columnAnswers(): array
+    {
+        return $this->fields()
+            ->filter(fn (FormField $field) => $field->isColumn())
+            ->mapWithKeys(fn (FormField $field) => [$field->key => $this->input($field->key)])
+            ->all();
+    }
+
+    /**
+     * Answers to admin-built fields, keyed by field key.
+     *
+     * @return array<string, mixed>
+     */
+    public function customAnswers(): array
+    {
+        $answers = [];
+
+        foreach ($this->fields() as $field) {
+            if ($field->is_system) {
+                continue;
+            }
+
+            if ($field->type === 'file') {
+                $answers[$field->key] = $this->file($field->key)
+                    ? $this->file($field->key)->store('form-uploads', 'public')
+                    : null;
+
+                continue;
+            }
+
+            $answers[$field->key] = $field->type === 'checkbox'
+                ? $this->boolean($field->key)
+                : $this->input($field->key);
+        }
+
+        return $answers;
     }
 
     /**
