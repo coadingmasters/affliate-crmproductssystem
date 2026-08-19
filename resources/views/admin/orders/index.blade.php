@@ -28,7 +28,7 @@
     <form method="GET" action="{{ route('admin.orders.index') }}" id="filter-form"
           class="rise mb-4 rounded-2xl border border-line bg-card p-4 sm:p-5" style="--delay: 60ms">
 
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
             <div class="sm:col-span-2 xl:col-span-1">
                 <label for="q" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Search</label>
                 <div class="relative">
@@ -36,7 +36,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
                     </svg>
                     <input type="search" name="q" id="q" value="{{ $filters['q'] }}"
-                           placeholder="Name, email, phone or #id"
+                           placeholder="Customer, account, phone or #id"
                            class="{{ $input }} pl-9">
                 </div>
             </div>
@@ -56,6 +56,16 @@
                     <option value="">All products</option>
                     @foreach ($products as $product)
                         <option value="{{ $product->id }}" @selected($filters['product_id'] === $product->id)>{{ $product->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label for="user_id" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Submitted by</label>
+                <select name="user_id" id="user_id" class="{{ $input }}">
+                    <option value="">All users</option>
+                    @foreach ($customers as $customer)
+                        <option value="{{ $customer->id }}" @selected($filters['user_id'] === $customer->id)>{{ $customer->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -125,6 +135,7 @@
                 <thead class="bg-elevated text-xs uppercase tracking-wider text-muted">
                     <tr>
                         <th class="px-4 py-3.5 font-medium">ID</th>
+                        <th class="px-4 py-3.5 font-medium">Submitted By</th>
                         <th class="px-4 py-3.5 font-medium">Full Name</th>
                         <th class="px-4 py-3.5 font-medium">Email</th>
                         <th class="px-4 py-3.5 font-medium">Phone</th>
@@ -142,6 +153,21 @@
                         <tr class="row-hover cursor-pointer hover:bg-elevated"
                             onclick="window.location='{{ route('admin.orders.show', $order) }}'">
                             <td class="whitespace-nowrap px-4 py-3.5 font-semibold text-accent">#{{ $order->id }}</td>
+                            <td class="whitespace-nowrap px-4 py-3.5">
+                                @if ($order->user)
+                                    <div class="flex items-center gap-2">
+                                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[11px] font-bold text-accent">
+                                            {{ Str::upper(Str::substr($order->user->name, 0, 1)) }}
+                                        </span>
+                                        <span>
+                                            <span class="block font-medium text-ink">{{ $order->user->name }}</span>
+                                            <span class="block text-xs text-muted">{{ $order->user->email }}</span>
+                                        </span>
+                                    </div>
+                                @else
+                                    <span class="text-xs text-muted">Account removed</span>
+                                @endif
+                            </td>
                             <td class="whitespace-nowrap px-4 py-3.5 font-medium text-ink">{{ $order->full_name }}</td>
                             <td class="whitespace-nowrap px-4 py-3.5 text-muted">{{ $order->email }}</td>
                             <td class="whitespace-nowrap px-4 py-3.5 text-muted">{{ $order->phone }}</td>
@@ -174,7 +200,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11" class="px-4 py-14 text-center">
+                            <td colspan="12" class="px-4 py-14 text-center">
                                 <p class="text-muted">No orders match these filters.</p>
                                 @if ($activeFilterCount > 0)
                                     <a href="{{ route('admin.orders.index') }}" class="mt-2 inline-block text-sm font-medium text-accent hover:underline">
@@ -225,7 +251,7 @@
         });
 
         // These apply immediately; the search box waits for Apply.
-        ['status', 'product_id', 'sort', 'per_page'].forEach(function (id) {
+        ['status', 'product_id', 'user_id', 'sort', 'per_page'].forEach(function (id) {
             document.getElementById(id).addEventListener('change', function () {
                 form.submit();
             });

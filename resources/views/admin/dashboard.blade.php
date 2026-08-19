@@ -91,6 +91,67 @@
 
 @section('content')
 
+    {{-- Filter bar: every figure below reflects this selection --}}
+    <form method="GET" action="{{ route('admin.dashboard') }}" id="dash-filter"
+          class="rise mb-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div>
+                <label for="period" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Date range</label>
+                <select name="period" id="period"
+                        class="w-full rounded-xl border border-line bg-elevated px-3.5 py-2.5 text-sm text-ink transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30">
+                    @foreach ($periods as $value => $label)
+                        <option value="{{ $value }}" @selected($filters['period'] === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label for="product_id" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Product</label>
+                <select name="product_id" id="product_id"
+                        class="w-full rounded-xl border border-line bg-elevated px-3.5 py-2.5 text-sm text-ink transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30">
+                    <option value="">All products</option>
+                    @foreach ($products as $product)
+                        <option value="{{ $product->id }}" @selected($filters['product_id'] === $product->id)>{{ $product->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div id="dash-custom" class="grid grid-cols-2 gap-3 sm:col-span-2 {{ $filters['period'] === 'custom' ? '' : 'hidden' }}">
+                <div>
+                    <label for="from" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">From</label>
+                    <input type="date" name="from" id="from" value="{{ $filters['from'] }}"
+                           class="w-full rounded-xl border border-line bg-elevated px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
+                </div>
+                <div>
+                    <label for="to" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">To</label>
+                    <input type="date" name="to" id="to" value="{{ $filters['to'] }}"
+                           class="w-full rounded-xl border border-line bg-elevated px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-4">
+            <button type="submit"
+                    class="rounded-xl bg-gradient-to-r from-accent to-accent2 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent/25 transition hover:opacity-90">
+                Apply
+            </button>
+
+            @if ($activeFilterCount > 0)
+                <a href="{{ route('admin.dashboard') }}"
+                   class="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-muted transition hover:border-danger hover:text-danger">
+                    Clear ({{ $activeFilterCount }})
+                </a>
+            @endif
+
+            <span class="ml-auto inline-flex items-center gap-2 rounded-lg bg-elevated px-3 py-1.5 text-xs font-medium text-muted">
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                Showing: {{ $rangeLabel }}
+            </span>
+        </div>
+    </form>
+
     {{-- KPI cards --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ($cards as $i => $card)
@@ -142,7 +203,7 @@
             <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 class="text-sm font-semibold text-ink">Order Activity</h2>
-                    <p class="mt-0.5 text-xs text-muted">Last {{ $series->count() }} days</p>
+                    <p class="mt-0.5 text-xs text-muted">{{ $rangeLabel }}</p>
                 </div>
 
                 <div class="flex items-center gap-2">
@@ -338,7 +399,9 @@
                                 <td class="px-5 py-3.5 font-semibold text-accent">#{{ $order->id }}</td>
                                 <td class="px-5 py-3.5">
                                     <p class="font-medium text-ink">{{ $order->full_name }}</p>
-                                    <p class="text-xs text-muted">{{ $order->email }}</p>
+                                    <p class="text-xs text-muted">
+                                        by {{ $order->user?->name ?? 'account removed' }}
+                                    </p>
                                 </td>
                                 <td class="px-5 py-3.5 text-muted">
                                     {{ $order->product?->name ?? '—' }}
@@ -369,6 +432,25 @@
 
 @push('scripts')
 <script>
+    (function () {
+        const form = document.getElementById('dash-filter');
+        const period = document.getElementById('period');
+        const custom = document.getElementById('dash-custom');
+
+        period.addEventListener('change', function () {
+            const isCustom = period.value === 'custom';
+            custom.classList.toggle('hidden', !isCustom);
+
+            if (!isCustom) {
+                form.submit();
+            }
+        });
+
+        document.getElementById('product_id').addEventListener('change', function () {
+            form.submit();
+        });
+    })();
+
     (function () {
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 

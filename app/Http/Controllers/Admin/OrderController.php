@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateOrderRequest;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
+use App\Support\DateRange;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -17,17 +19,7 @@ class OrderController extends Controller
     /**
      * Date range presets offered in the filter bar.
      */
-    public const PERIODS = [
-        'all' => 'All time',
-        'today' => 'Today',
-        'yesterday' => 'Yesterday',
-        'this_week' => 'This week',
-        'last_week' => 'Last week',
-        'this_month' => 'This month',
-        'last_month' => 'Last month',
-        'this_year' => 'This year',
-        'custom' => 'Custom range',
-    ];
+    public const PERIODS = DateRange::PERIODS;
 
     /**
      * Sort options.
@@ -52,7 +44,7 @@ class OrderController extends Controller
     {
         $filters = $this->filters($request);
 
-        $query = Order::with(['product', 'productPrice'])
+        $query = Order::with(['product', 'productPrice', 'user'])
             ->tap(fn (Builder $q) => $this->applyFilters($q, $filters));
 
         // Totals reflect the current filter, not the whole table.
@@ -69,6 +61,7 @@ class OrderController extends Controller
             'orders' => $orders,
             'filters' => $filters,
             'products' => Product::orderBy('name')->get(['id', 'name']),
+            'customers' => User::where('role', 'user')->orderBy('name')->get(['id', 'name', 'email']),
             'periods' => self::PERIODS,
             'sorts' => self::SORTS,
             'perPageOptions' => self::PER_PAGE,
@@ -118,9 +111,10 @@ class OrderController extends Controller
             'q' => trim((string) $request->query('q', '')),
             'status' => in_array($status, Order::statuses(), true) ? $status : 'all',
             'period' => array_key_exists((string) $period, self::PERIODS) ? $period : 'all',
-            'from' => $this->parseDate($request->query('from')),
-            'to' => $this->parseDate($request->query('to')),
+            'from' => DateRange::parseDate($request->query('from')),
+            'to' => DateRange::parseDate($request->query('to')),
             'product_id' => $request->query('product_id') ? (int) $request->query('product_id') : null,
+            'user_id' => $request->query('user_id') ? (int) $request->query('user_id') : null,
             'sort' => array_key_exists((string) $sort, self::SORTS) ? $sort : 'newest',
             'per_page' => in_array($perPage, self::PER_PAGE, true) ? $perPage : 15,
         ];
@@ -146,6 +140,11 @@ class OrderController extends Controller
                 if (ctype_digit($filters['q'])) {
                     $q->orWhere('id', (int) $filters['q']);
                 }
+
+                // Match the account that submitted it too.
+                $q->orWhereHas('user', function (Builder $u) use ($term) {
+                    $u->where('name', 'like', $term)->orWhere('email', 'like', $term);
+                });
             });
         }
 
@@ -155,6 +154,10 @@ class OrderController extends Controller
 
         if ($filters['product_id']) {
             $query->where('product_id', $filters['product_id']);
+        }
+
+        if ($filters['user_id']) {
+            $query->where('user_id', $filters['user_id']);
         }
 
         [$from, $to] = $this->dateRange($filters);
@@ -187,50 +190,7 @@ class OrderController extends Controller
      */
     private function dateRange(array $filters): array
     {
-        $tz = config('app.display_timezone');
-        $now = CarbonImmutable::now($tz);
-
-        $utc = fn (?CarbonImmutable $date) => $date?->utc();
-
-        return match ($filters['period']) {
-            'today' => [$utc($now->startOfDay()), $utc($now->endOfDay())],
-            'yesterday' => [
-                $utc($now->subDay()->startOfDay()),
-                $utc($now->subDay()->endOfDay()),
-            ],
-            'this_week' => [$utc($now->startOfWeek()), $utc($now->endOfWeek())],
-            'last_week' => [
-                $utc($now->subWeek()->startOfWeek()),
-                $utc($now->subWeek()->endOfWeek()),
-            ],
-            'this_month' => [$utc($now->startOfMonth()), $utc($now->endOfMonth())],
-            'last_month' => [
-                $utc($now->subMonth()->startOfMonth()),
-                $utc($now->subMonth()->endOfMonth()),
-            ],
-            'this_year' => [$utc($now->startOfYear()), $utc($now->endOfYear())],
-            'custom' => [
-                $filters['from'] ? $utc(CarbonImmutable::parse($filters['from'], $tz)->startOfDay()) : null,
-                $filters['to'] ? $utc(CarbonImmutable::parse($filters['to'], $tz)->endOfDay()) : null,
-            ],
-            default => [null, null],
-        };
-    }
-
-    /**
-     * Validate a yyyy-mm-dd string from the date inputs.
-     */
-    private function parseDate(mixed $value): ?string
-    {
-        if (! is_string($value) || $value === '') {
-            return null;
-        }
-
-        try {
-            return CarbonImmutable::createFromFormat('Y-m-d', $value)->format('Y-m-d');
-        } catch (\Throwable) {
-            return null;
-        }
+        return DateRange::resolve($filters['period'], $filters['from'], $filters['to']);
     }
 
     /**
@@ -245,6 +205,7 @@ class OrderController extends Controller
             $filters['status'] !== 'all',
             $filters['period'] !== 'all',
             $filters['product_id'] !== null,
+            $filters['user_id'] !== null,
             $filters['sort'] !== 'newest',
         ])->filter()->count();
     }
