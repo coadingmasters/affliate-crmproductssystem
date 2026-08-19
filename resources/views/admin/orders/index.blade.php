@@ -9,7 +9,7 @@
     @endphp
 
     {{-- Totals for the current filter, not the whole table --}}
-    <div class="rise mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div class="rise mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-2xl border border-line bg-card p-4">
             <p class="text-xs font-medium uppercase tracking-wider text-muted">Orders</p>
             <p class="mt-1 text-2xl font-bold text-ink">{{ number_format($totalOrders) }}</p>
@@ -19,8 +19,12 @@
             <p class="mt-1 text-2xl font-bold text-accent">${{ number_format($totalRevenue, 2) }}</p>
         </div>
         <div class="rounded-2xl border border-line bg-card p-4">
-            <p class="text-xs font-medium uppercase tracking-wider text-muted">Commission</p>
-            <p class="mt-1 text-2xl font-bold text-success">${{ number_format($totalCommission, 2) }}</p>
+            <p class="text-xs font-medium uppercase tracking-wider text-muted">User Commission</p>
+            <p class="mt-1 text-2xl font-bold text-success">${{ number_format($totalUserCommission, 2) }}</p>
+        </div>
+        <div class="rounded-2xl border border-line bg-card p-4">
+            <p class="text-xs font-medium uppercase tracking-wider text-muted">Admin Commission</p>
+            <p class="mt-1 text-2xl font-bold text-info">${{ number_format($totalAdminCommission, 2) }}</p>
         </div>
     </div>
 
@@ -143,7 +147,8 @@
                         <th class="px-4 py-3.5 font-medium">Price Label</th>
                         <th class="px-4 py-3.5 font-medium">Qty</th>
                         <th class="px-4 py-3.5 font-medium">Total</th>
-                        <th class="px-4 py-3.5 font-medium">Commission</th>
+                        <th class="px-4 py-3.5 font-medium">User Comm.</th>
+                        <th class="px-4 py-3.5 font-medium">Admin Comm.</th>
                         <th class="px-4 py-3.5 font-medium">Status</th>
                         <th class="px-4 py-3.5 font-medium">Submitted</th>
                     </tr>
@@ -175,7 +180,8 @@
                             <td class="whitespace-nowrap px-4 py-3.5 text-muted">{{ $order->productPrice?->label ?? '—' }}</td>
                             <td class="px-4 py-3.5 text-muted">{{ $order->quantity }}</td>
                             <td class="whitespace-nowrap px-4 py-3.5 font-semibold text-ink">${{ number_format($order->total_price, 2) }}</td>
-                            <td class="whitespace-nowrap px-4 py-3.5 font-semibold text-success">${{ number_format($order->commission_total, 2) }}</td>
+                            <td class="whitespace-nowrap px-4 py-3.5 font-semibold text-success">${{ number_format($order->user_commission_total, 2) }}</td>
+                            <td class="whitespace-nowrap px-4 py-3.5 font-semibold text-info">${{ number_format($order->admin_commission_total, 2) }}</td>
                             <td class="px-4 py-3.5">
                                 <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $order->statusClasses() }}">
                                     {{ $order->statusLabel() }}
@@ -200,7 +206,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="12" class="px-4 py-14 text-center">
+                            <td colspan="13" class="px-4 py-14 text-center">
                                 <p class="text-muted">No orders match these filters.</p>
                                 @if ($activeFilterCount > 0)
                                     <a href="{{ route('admin.orders.index') }}" class="mt-2 inline-block text-sm font-medium text-accent hover:underline">

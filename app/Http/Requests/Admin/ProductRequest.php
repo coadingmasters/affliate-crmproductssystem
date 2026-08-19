@@ -50,7 +50,8 @@ class ProductRequest extends FormRequest
             ],
             'prices.*.label' => ['required', 'string', 'max:255'],
             'prices.*.price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
-            'prices.*.commission' => ['required', 'numeric', 'min:0', 'max:999999.99'],
+            'prices.*.user_commission' => ['required', 'numeric', 'min:0', 'max:999999.99'],
+            'prices.*.admin_commission' => ['required', 'numeric', 'min:0', 'max:999999.99'],
         ];
     }
 
@@ -67,8 +68,10 @@ class ProductRequest extends FormRequest
             'prices.*.label.required' => 'The price label is required.',
             'prices.*.price.required' => 'The price is required.',
             'prices.*.price.numeric' => 'The price must be a number.',
-            'prices.*.commission.required' => 'Set the commission for this package (0 is allowed).',
-            'prices.*.commission.numeric' => 'The commission must be a number.',
+            'prices.*.user_commission.required' => 'Set the user commission (0 is allowed).',
+            'prices.*.admin_commission.required' => 'Set the admin commission (0 is allowed).',
+            'prices.*.user_commission.numeric' => 'The user commission must be a number.',
+            'prices.*.admin_commission.numeric' => 'The admin commission must be a number.',
         ];
     }
 }

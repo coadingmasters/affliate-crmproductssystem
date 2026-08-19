@@ -1,14 +1,14 @@
 @php
     // Prefer old input after a failed validation, otherwise the stored price rows.
     $priceRows = old('prices', $product->prices
-        ->map(fn ($price) => ['id' => $price->id, 'label' => $price->label, 'price' => $price->price, 'commission' => $price->commission])
+        ->map(fn ($price) => ['id' => $price->id, 'label' => $price->label, 'price' => $price->price, 'user_commission' => $price->user_commission, 'admin_commission' => $price->admin_commission])
         ->all());
 
     // Old input is whatever was posted, so keep only well formed rows.
     $priceRows = is_array($priceRows) ? array_filter($priceRows, 'is_array') : [];
 
     if (empty($priceRows)) {
-        $priceRows = [['id' => '', 'label' => '', 'price' => '', 'commission' => '']];
+        $priceRows = [['id' => '', 'label' => '', 'price' => '', 'user_commission' => '', 'admin_commission' => '']];
     }
 
     $inputClasses = 'w-full rounded-xl border bg-elevated px-3.5 py-2.5 text-sm text-ink placeholder-muted transition focus:outline-none focus:ring-2 focus:ring-accent/30';
@@ -85,7 +85,7 @@
                 Add Price
             </button>
         </div>
-        <p class="mb-4 text-xs text-muted">For example: Small, Medium, Large, Pack of 10, Pack of 60. Commission is what the affiliate earns per unit.</p>
+        <p class="mb-4 text-xs text-muted">For example: Small, Medium, Large, Pack of 10, Pack of 60. User Comm. is what the customer earns; Admin Comm. is what the business keeps.</p>
 
         @error('prices')
             <p class="mb-4 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">{{ $message }}</p>
@@ -103,7 +103,7 @@
                 <div class="price-row grid grid-cols-12 items-start gap-3">
                     <input type="hidden" name="prices[{{ $index }}][id]" value="{{ $row['id'] ?? '' }}">
 
-                    <div class="col-span-12 sm:col-span-5">
+                    <div class="col-span-12 sm:col-span-4">
                         <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">Label</label>
                         <input type="text" name="prices[{{ $index }}][label]" value="{{ $row['label'] ?? '' }}"
                                placeholder="Label (e.g. Pack of 10)"
@@ -113,7 +113,7 @@
                         @enderror
                     </div>
 
-                    <div class="col-span-6 sm:col-span-3">
+                    <div class="col-span-4 sm:col-span-2">
                         <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">Price</label>
                         <div class="relative">
                             <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted">$</span>
@@ -126,15 +126,28 @@
                         @enderror
                     </div>
 
-                    <div class="col-span-6 sm:col-span-3">
-                        <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">Commission</label>
+                    <div class="col-span-4 sm:col-span-2">
+                        <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">User Comm.</label>
                         <div class="relative">
                             <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-success">$</span>
-                            <input type="number" step="0.01" min="0" name="prices[{{ $index }}][commission]" value="{{ $row['commission'] ?? '' }}"
+                            <input type="number" step="0.01" min="0" name="prices[{{ $index }}][user_commission]" value="{{ $row['user_commission'] ?? '' }}"
                                    placeholder="0.00"
-                                   class="{{ $inputClasses }} pl-7 {{ $errors->has("prices.$index.commission") ? 'border-danger' : 'border-line focus:border-accent' }}">
+                                   class="{{ $inputClasses }} pl-7 {{ $errors->has("prices.$index.user_commission") ? 'border-danger' : 'border-line focus:border-accent' }}">
                         </div>
-                        @error("prices.$index.commission")
+                        @error("prices.$index.user_commission")
+                            <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="col-span-4 sm:col-span-3">
+                        <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">Admin Comm.</label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-info">$</span>
+                            <input type="number" step="0.01" min="0" name="prices[{{ $index }}][admin_commission]" value="{{ $row['admin_commission'] ?? '' }}"
+                                   placeholder="0.00"
+                                   class="{{ $inputClasses }} pl-7 {{ $errors->has("prices.$index.admin_commission") ? 'border-danger' : 'border-line focus:border-accent' }}">
+                        </div>
+                        @error("prices.$index.admin_commission")
                             <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
                         @enderror
                     </div>
@@ -170,13 +183,13 @@
     <div class="price-row grid grid-cols-12 items-start gap-3">
         <input type="hidden" name="prices[__INDEX__][id]" value="">
 
-        <div class="col-span-12 sm:col-span-5">
+        <div class="col-span-12 sm:col-span-4">
             <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">Label</label>
             <input type="text" name="prices[__INDEX__][label]" placeholder="Label (e.g. Pack of 10)"
                    class="{{ $inputClasses }} border-line focus:border-accent">
         </div>
 
-        <div class="col-span-6 sm:col-span-3">
+        <div class="col-span-4 sm:col-span-2">
             <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">Price</label>
             <div class="relative">
                 <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted">$</span>
@@ -185,11 +198,20 @@
             </div>
         </div>
 
-        <div class="col-span-6 sm:col-span-3">
-            <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">Commission</label>
+        <div class="col-span-4 sm:col-span-2">
+            <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">User Comm.</label>
             <div class="relative">
                 <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-success">$</span>
-                <input type="number" step="0.01" min="0" name="prices[__INDEX__][commission]" placeholder="0.00"
+                <input type="number" step="0.01" min="0" name="prices[__INDEX__][user_commission]" placeholder="0.00"
+                       class="{{ $inputClasses }} border-line pl-7 focus:border-accent">
+            </div>
+        </div>
+
+        <div class="col-span-4 sm:col-span-3">
+            <label class="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted sm:hidden">Admin Comm.</label>
+            <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-info">$</span>
+                <input type="number" step="0.01" min="0" name="prices[__INDEX__][admin_commission]" placeholder="0.00"
                        class="{{ $inputClasses }} border-line pl-7 focus:border-accent">
             </div>
         </div>

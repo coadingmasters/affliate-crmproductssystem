@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['product_id', 'label', 'price', 'commission'])]
+#[Fillable(['product_id', 'label', 'price', 'user_commission', 'admin_commission'])]
 class ProductPrice extends Model
 {
     /**
@@ -19,7 +19,8 @@ class ProductPrice extends Model
     {
         return [
             'price' => 'decimal:2',
-            'commission' => 'decimal:2',
+            'user_commission' => 'decimal:2',
+            'admin_commission' => 'decimal:2',
         ];
     }
 

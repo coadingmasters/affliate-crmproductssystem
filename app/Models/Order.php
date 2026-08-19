@@ -16,7 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'product_price_id',
     'quantity',
     'total_price',
-    'commission_total',
+    'user_commission_total',
+    'admin_commission_total',
     'status',
     'post_date',
     'notes',
@@ -82,7 +83,8 @@ class Order extends Model
         return [
             'quantity' => 'integer',
             'total_price' => 'decimal:2',
-            'commission_total' => 'decimal:2',
+            'user_commission_total' => 'decimal:2',
+            'admin_commission_total' => 'decimal:2',
             'status_changed_at' => 'datetime',
             'post_date' => 'date',
         ];

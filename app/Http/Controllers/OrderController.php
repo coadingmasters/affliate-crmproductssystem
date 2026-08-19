@@ -50,10 +50,10 @@ class OrderController extends Controller
             // Commission is only banked once an order reaches delivered/paid.
             'commissionEarned' => (float) $request->user()->orders()
                 ->whereIn('status', Order::EARNING_STATUSES)
-                ->sum('commission_total'),
+                ->sum('user_commission_total'),
             'commissionPending' => (float) $request->user()->orders()
                 ->whereIn('status', Order::OPEN_STATUSES)
-                ->sum('commission_total'),
+                ->sum('user_commission_total'),
         ]);
     }
 
@@ -77,12 +77,12 @@ class OrderController extends Controller
         return response()->json(
             $product->prices()
                 ->orderBy('price')
-                ->get(['id', 'label', 'price', 'commission'])
+                ->get(['id', 'label', 'price', 'user_commission'])
                 ->map(fn ($price) => [
                     'id' => $price->id,
                     'label' => $price->label,
                     'price' => (float) $price->price,
-                    'commission' => (float) $price->commission,
+                    'commission' => (float) $price->user_commission,
                 ]),
         );
     }
@@ -106,7 +106,8 @@ class OrderController extends Controller
             ]),
             // Never trust the figures that came from the browser.
             'total_price' => $request->total(),
-            'commission_total' => $request->commission(),
+            'user_commission_total' => $request->userCommission(),
+            'admin_commission_total' => $request->adminCommission(),
             'status' => 'new',
         ]);
 

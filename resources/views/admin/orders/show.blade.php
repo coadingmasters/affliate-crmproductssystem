@@ -101,7 +101,8 @@
                                 <th class="px-5 py-3 font-medium">Option</th>
                                 <th class="px-5 py-3 font-medium">Unit Price</th>
                                 <th class="px-5 py-3 font-medium">Qty</th>
-                                <th class="px-5 py-3 font-medium">Commission</th>
+                                <th class="px-5 py-3 font-medium">User Comm.</th>
+                                <th class="px-5 py-3 font-medium">Admin Comm.</th>
                                 <th class="px-5 py-3 text-right font-medium sm:px-6">Total</th>
                             </tr>
                         </thead>
@@ -114,7 +115,10 @@
                                 </td>
                                 <td class="px-5 py-4 text-muted">{{ $order->quantity }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 font-semibold text-success">
-                                    ${{ number_format($order->commission_total, 2) }}
+                                    ${{ number_format($order->user_commission_total, 2) }}
+                                </td>
+                                <td class="whitespace-nowrap px-5 py-4 font-semibold text-info">
+                                    ${{ number_format($order->admin_commission_total, 2) }}
                                 </td>
                                 <td class="px-5 py-4 text-right text-lg font-bold text-accent sm:px-6">
                                     ${{ number_format($order->total_price, 2) }}

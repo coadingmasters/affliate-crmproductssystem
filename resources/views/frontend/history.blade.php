@@ -86,9 +86,9 @@
                     </div>
                     <div class="text-right">
                         <p class="text-xl font-extrabold tracking-tight text-brand">${{ number_format($order->total_price, 2) }}</p>
-                        @if ($order->commission_total > 0)
+                        @if ($order->user_commission_total > 0)
                             <p class="mt-0.5 text-xs font-semibold text-success">
-                                Commission ${{ number_format($order->commission_total, 2) }}
+                                You earn ${{ number_format($order->user_commission_total, 2) }}
                             </p>
                         @endif
                     </div>

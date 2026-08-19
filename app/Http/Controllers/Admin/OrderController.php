@@ -29,7 +29,7 @@ class OrderController extends Controller
         'oldest' => 'Oldest first',
         'total_desc' => 'Highest total',
         'total_asc' => 'Lowest total',
-        'commission_desc' => 'Highest commission',
+        'commission_desc' => 'Highest user commission',
     ];
 
     /**
@@ -49,7 +49,7 @@ class OrderController extends Controller
 
         // Totals reflect the current filter, not the whole table.
         $totals = (clone $query)
-            ->selectRaw('COUNT(*) as orders, COALESCE(SUM(total_price), 0) as revenue, COALESCE(SUM(commission_total), 0) as commission')
+            ->selectRaw('COUNT(*) as orders, COALESCE(SUM(total_price), 0) as revenue, COALESCE(SUM(user_commission_total), 0) as user_commission, COALESCE(SUM(admin_commission_total), 0) as admin_commission')
             ->reorder()
             ->first();
 
@@ -68,7 +68,8 @@ class OrderController extends Controller
             'statusMeta' => Order::STATUS_META,
             'totalOrders' => (int) ($totals->orders ?? 0),
             'totalRevenue' => (float) ($totals->revenue ?? 0),
-            'totalCommission' => (float) ($totals->commission ?? 0),
+            'totalUserCommission' => (float) ($totals->user_commission ?? 0),
+            'totalAdminCommission' => (float) ($totals->admin_commission ?? 0),
             'activeFilterCount' => $this->activeFilterCount($filters),
         ]);
     }
@@ -174,7 +175,7 @@ class OrderController extends Controller
             'oldest' => $query->oldest(),
             'total_desc' => $query->orderByDesc('total_price'),
             'total_asc' => $query->orderBy('total_price'),
-            'commission_desc' => $query->orderByDesc('commission_total'),
+            'commission_desc' => $query->orderByDesc('user_commission_total'),
             default => $query->latest(),
         };
     }

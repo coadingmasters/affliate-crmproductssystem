@@ -102,10 +102,18 @@ class StoreOrderRequest extends FormRequest
     }
 
     /**
-     * The commission earned on this order, also recalculated server side.
+     * What the customer earns on this order, recalculated server side.
      */
-    public function commission(): float
+    public function userCommission(): float
     {
-        return round((float) $this->productPrice()->commission * $this->integer('quantity'), 2);
+        return round((float) $this->productPrice()->user_commission * $this->integer('quantity'), 2);
+    }
+
+    /**
+     * What the business earns on this order, recalculated server side.
+     */
+    public function adminCommission(): float
+    {
+        return round((float) $this->productPrice()->admin_commission * $this->integer('quantity'), 2);
     }
 }
