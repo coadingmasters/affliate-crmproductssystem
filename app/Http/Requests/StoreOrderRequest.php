@@ -51,10 +51,17 @@ class StoreOrderRequest extends FormRequest
                 'required',
                 Rule::exists('product_prices', 'id')->where('product_id', $this->input('product_id')),
             ],
-            'quantity' => ['required', 'integer', 'min:1', 'max:1000'],
         ];
 
         foreach ($this->fields() as $field) {
+            // Quantity brings its own rules; the other special blocks are
+            // validated by the product and package rules above.
+            if ($field->type === 'quantity') {
+                $rules['quantity'] = $field->rules();
+
+                continue;
+            }
+
             if ($field->isSpecial()) {
                 continue;
             }
@@ -186,6 +193,19 @@ class StoreOrderRequest extends FormRequest
     }
 
     /**
+     * How many units were ordered.
+     *
+     * The Quantity field is optional, so a form without one is treated as a
+     * single unit rather than failing.
+     */
+    public function quantity(): int
+    {
+        $value = (int) $this->input('quantity', 1);
+
+        return max(1, min(1000, $value ?: 1));
+    }
+
+    /**
      * The selected price option.
      */
     public function productPrice(): ProductPrice
@@ -198,7 +218,7 @@ class StoreOrderRequest extends FormRequest
      */
     public function total(): float
     {
-        return round((float) $this->productPrice()->price * $this->integer('quantity'), 2);
+        return round((float) $this->productPrice()->price * $this->quantity(), 2);
     }
 
     /**
@@ -206,7 +226,7 @@ class StoreOrderRequest extends FormRequest
      */
     public function userCommission(): float
     {
-        return round((float) $this->productPrice()->user_commission * $this->integer('quantity'), 2);
+        return round((float) $this->productPrice()->user_commission * $this->quantity(), 2);
     }
 
     /**
@@ -214,6 +234,6 @@ class StoreOrderRequest extends FormRequest
      */
     public function adminCommission(): float
     {
-        return round((float) $this->productPrice()->admin_commission * $this->integer('quantity'), 2);
+        return round((float) $this->productPrice()->admin_commission * $this->quantity(), 2);
     }
 }

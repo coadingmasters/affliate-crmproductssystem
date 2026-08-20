@@ -96,7 +96,7 @@
                                 @enderror
                             </div>
 
-                        @elseif ($field->key === 'quantity')
+                        @elseif ($field->type === 'quantity')
                             <div class="{{ $field->width === 'full' ? 'sm:col-span-2' : '' }}">
                                 <label for="quantity" class="mb-1.5 block text-sm font-medium text-ink">
                                     {{ $field->label }}<span class="text-danger">*</span>

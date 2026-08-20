@@ -62,6 +62,15 @@ class FormBuilderController extends Controller
             'fields.*.options.*' => ['nullable', 'string', 'max:120'],
         ]);
 
+        // A second quantity field would fight the first for the same value.
+        $quantityCount = collect($data['fields'])->where('type', 'quantity')->count();
+
+        if ($quantityCount > 1) {
+            return response()->json([
+                'message' => 'Only one Quantity field can be on the form.',
+            ], 422);
+        }
+
         // Every system field must survive, since order columns depend on them.
         $submittedIds = collect($data['fields'])->pluck('id')->filter()->all();
         $missing = FormField::where('is_system', true)->whereNotIn('id', $submittedIds)->pluck('label');
@@ -133,7 +142,6 @@ class FormBuilderController extends Controller
             ['key' => 'address', 'type' => 'textarea', 'label' => 'Address', 'placeholder' => '1234 MAIN ST APT 5, LOS ANGELES CA 90001'],
             ['key' => 'product', 'type' => 'select', 'label' => 'Select Product', 'placeholder' => null],
             ['key' => 'package', 'type' => 'select', 'label' => 'Select Price / Package', 'placeholder' => null],
-            ['key' => 'quantity', 'type' => 'number', 'label' => 'Quantity', 'placeholder' => null],
         ];
 
         foreach ($defaults as $index => $field) {

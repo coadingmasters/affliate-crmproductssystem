@@ -114,7 +114,7 @@
         fields.forEach((field, index) => {
             const meta = TYPES[field.type] || TYPES.text;
             const locked = !!field.is_system;
-            const special = SPECIAL.includes(field.key);
+            const special = SPECIAL.includes(field.key) || field.type === 'quantity';
 
             const row = document.createElement('div');
             row.className = 'field-row group flex items-center gap-3 rounded-xl border bg-elevated px-3 py-2.5 transition '
@@ -251,7 +251,7 @@
                 ${locked ? '<p class="mt-1 text-[11px] text-muted">Built in fields keep their type.</p>' : ''}
             </div>
 
-            ${SPECIAL.includes(field.key) ? `
+            ${(SPECIAL.includes(field.key) || field.type === 'quantity') ? `
             <div class="rounded-xl border border-info/30 bg-info/10 p-3">
                 <p class="text-xs font-semibold text-ink">Filled in automatically</p>
                 <p class="mt-1 text-[11px] text-muted">
@@ -259,7 +259,7 @@
                         ? 'Every active product appears here on the storefront. Manage them under Products.'
                         : field.key === 'package'
                             ? 'Loads the packages of the product the customer picks, with live pricing.'
-                            : 'Controlled by the order form.'}
+                            : 'Renders as a stepper and multiplies the total. Remove it and every order counts as one unit.'}
                 </p>
             </div>` : (meta.has_options ? `
             <div>
@@ -336,6 +336,14 @@
 
     function addField(type) {
         const meta = TYPES[type] || TYPES.text;
+
+        if (type === 'quantity' && fields.some(f => f.type === 'quantity')) {
+            Modal.alert({
+                title: 'Quantity is already on the form',
+                message: 'Only one Quantity field can be used. Remove the existing one first if you want to move it.',
+            });
+            return;
+        }
 
         fields.push({
             id: null,

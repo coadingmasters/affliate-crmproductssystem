@@ -30,6 +30,7 @@ class FormField extends Model
         'card_number' => ['label' => 'Card Number', 'icon' => 'M3 10h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z', 'hint' => 'Only the last 4 digits are stored', 'has_options' => false],
         'card_expiry' => ['label' => 'Card Expiry', 'icon' => 'M8 7V3m8 4V3M4 11h16M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', 'hint' => 'MM / YY', 'has_options' => false],
         'card_cvv' => ['label' => 'CVV', 'icon' => 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z', 'hint' => 'Never stored, by law', 'has_options' => false],
+        'quantity' => ['label' => 'Quantity', 'icon' => 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', 'hint' => 'How many units, with a stepper', 'has_options' => false],
         'file' => ['label' => 'File upload', 'icon' => 'M7 16a4 4 0 01-.9-7.9 5 5 0 019.7-1.7A4.5 4.5 0 1117 16H7zm5-6v6m0-6l-2 2m2-2l2 2', 'hint' => 'Image or document', 'has_options' => false],
     ];
 
@@ -38,14 +39,14 @@ class FormField extends Model
      *
      * @var array<int, string>
      */
-    public const SYSTEM_KEYS = ['full_name', 'email', 'phone', 'address', 'product', 'package', 'quantity'];
+    public const SYSTEM_KEYS = ['full_name', 'email', 'phone', 'address', 'product', 'package'];
 
     /**
      * Keys rendered by their own dedicated markup rather than a plain input.
      *
      * @var array<int, string>
      */
-    public const SPECIAL_KEYS = ['product', 'package', 'quantity'];
+    public const SPECIAL_KEYS = ['product', 'package'];
 
     /**
      * Card related types, which are handled with extra care on submit.
@@ -90,7 +91,8 @@ class FormField extends Model
      */
     public function isSpecial(): bool
     {
-        return in_array($this->key, self::SPECIAL_KEYS, true);
+        return in_array($this->key, self::SPECIAL_KEYS, true)
+            || $this->type === 'quantity';
     }
 
     /**
@@ -109,6 +111,10 @@ class FormField extends Model
     public function rules(): array
     {
         $rules = [$this->is_required ? 'required' : 'nullable'];
+
+        if ($this->type === 'quantity') {
+            return ['required', 'integer', 'min:1', 'max:1000'];
+        }
 
         $rules[] = match ($this->type) {
             'email' => 'email',

@@ -90,7 +90,8 @@ class OrderController extends Controller
             // Tie the order to the signed in account.
             'user_id' => $request->user()->id,
             ...$request->columnAnswers(),
-            ...$request->safe()->only(['product_id', 'product_price_id', 'quantity']),
+            ...$request->safe()->only(['product_id', 'product_price_id']),
+            'quantity' => $request->quantity(),
             'form_data' => $request->customAnswers(),
             // Never trust the figures that came from the browser.
             'total_price' => $request->total(),

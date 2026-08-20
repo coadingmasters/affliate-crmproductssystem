@@ -63,7 +63,7 @@
                                 <select class="{{ $input }}"><option>Select a product first</option></select>
                             </div>
 
-                        @elseif ($field->key === 'quantity')
+                        @elseif ($field->type === 'quantity')
                             <div class="{{ $span }}">
                                 <label class="mb-1.5 block text-sm font-medium text-ink">{{ $field->label }}<span class="text-danger">*</span></label>
                                 <div class="flex items-stretch gap-2">

@@ -23,7 +23,7 @@ class FormFieldSeeder extends Seeder
             ['key' => 'address', 'type' => 'textarea', 'label' => 'Address', 'placeholder' => '1234 MAIN ST APT 5, LOS ANGELES CA 90001', 'is_required' => true],
             ['key' => 'product', 'type' => 'select', 'label' => 'Select Product', 'is_required' => true],
             ['key' => 'package', 'type' => 'select', 'label' => 'Select Price / Package', 'is_required' => true],
-            ['key' => 'quantity', 'type' => 'number', 'label' => 'Quantity', 'is_required' => true],
+            ['key' => 'quantity', 'type' => 'quantity', 'label' => 'Quantity', 'is_required' => true],
         ];
 
         foreach ($fields as $index => $field) {
@@ -31,7 +31,8 @@ class FormFieldSeeder extends Seeder
                 ['key' => $field['key']],
                 [
                     ...$field,
-                    'is_system' => true,
+                    // Quantity is optional, so the admin may remove it.
+                    'is_system' => $field['key'] !== 'quantity',
                     'is_active' => true,
                     'width' => 'half',
                     'sort_order' => $index,
