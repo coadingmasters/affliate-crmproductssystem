@@ -1,6 +1,7 @@
-@extends('layouts.app')
+@extends('layouts.customer')
 
 @section('title', 'Place Your Order · Med Alert')
+@section('heading', 'Place Order')
 
 @php
     $cls = fn (string $f) => 'field w-full rounded-xl border bg-elevated px-3.5 py-2.5 text-sm text-ink placeholder-muted '
@@ -15,39 +16,15 @@
 
 @section('content')
 
-    @include('partials.account-bar')
-
-    <div class="rise mb-5 flex items-center justify-center gap-3">
-        <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand2 text-lg font-bold text-white shadow-lg shadow-brand/30">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-            </svg>
-        </span>
-        <div class="text-left">
-            <h1 class="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">Med Alert</h1>
-            <p class="text-xs text-muted sm:text-sm">Place Your Order Below</p>
-        </div>
+    <div class="rise mb-5">
+        <h2 class="text-xl font-bold tracking-tight text-ink sm:text-2xl">Place Your Order</h2>
+        <p class="mt-1 text-sm text-muted">Fill in the details below and we will be in touch to confirm.</p>
     </div>
 
-    @if (session('status'))
-        <div class="pop mb-4 flex items-start gap-3 rounded-2xl border border-success/30 bg-success/10 p-4 backdrop-blur">
-            <svg class="mt-0.5 h-5 w-5 shrink-0 text-success" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <p class="text-sm font-medium text-success">{{ session('status') }}</p>
-        </div>
-    @endif
 
-    @if ($errors->any())
-        <div class="pop mb-4 flex items-start gap-3 rounded-2xl border border-danger/30 bg-danger/10 p-4">
-            <svg class="mt-0.5 h-5 w-5 shrink-0 text-danger" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86a2 2 0 001.71-3L13.71 4a2 2 0 00-3.42 0L3.36 16a2 2 0 001.71 3z"/>
-            </svg>
-            <p class="text-sm font-medium text-danger">Please check the highlighted fields below.</p>
-        </div>
-    @endif
 
-    <div class="rise rounded-2xl border border-line bg-card/90 p-5 shadow-2xl shadow-black/5 backdrop-blur-xl sm:p-7" style="--delay: 90ms">
+
+    <div class="rise max-w-3xl rounded-2xl border border-line bg-card p-5 shadow-sm sm:p-7" style="--delay: 90ms">
         @if ($products->isEmpty())
             <div class="py-10 text-center">
                 <p class="text-sm font-medium text-ink">No products are available right now.</p>
@@ -153,15 +130,6 @@
         @endif
     </div>
 
-    <div class="rise mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted" style="--delay: 380ms">
-        <span class="flex items-center gap-1.5">
-            <svg class="h-3.5 w-3.5 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            Secure checkout
-        </span>
-        <span>&copy; {{ date('Y') }} Med Alert</span>
-    </div>
 @endsection
 
 @push('scripts')

@@ -1,12 +1,11 @@
-@extends('layouts.app')
+@extends('layouts.customer')
 
 @section("title", "My Dashboard · Med Alert")
+@section('heading', 'My Dashboard')
 
 @section('content')
-    @include('partials.account-bar')
-
     <div class="rise mb-5">
-        <h1 class="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">My Dashboard</h1>
+        <h2 class="text-xl font-bold tracking-tight text-ink sm:text-2xl">Welcome back, {{ Str::before(auth()->user()->name, ' ') }}</h2>
         <p class="mt-1 text-sm text-muted">Everything you have ordered, and where it stands.</p>
     </div>
 
@@ -21,7 +20,7 @@
             ];
         @endphp
         @foreach ($tiles as $tile)
-            <div class="rounded-2xl border border-line bg-card/90 p-4 backdrop-blur">
+            <div class="rounded-2xl border border-line bg-card p-4 shadow-sm">
                 <p class="text-xs font-medium uppercase tracking-wider text-muted">{{ $tile['label'] }}</p>
                 <p class="mt-1.5 text-2xl font-bold {{ $tile['tone'] }}">{{ $tile['value'] }}</p>
             </div>
@@ -45,7 +44,7 @@
                 $label = $order->customerStatusLabel();
                 $progress = $order->progress();
             @endphp
-            <div class="rounded-2xl border border-line bg-card/90 p-4 backdrop-blur transition hover:border-brand/40 sm:p-5">
+            <div class="rounded-2xl border border-line bg-card p-4 shadow-sm transition hover:border-brand/40 hover:shadow-md sm:p-5">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div class="min-w-0">
                         <div class="flex items-center gap-2.5">
@@ -94,7 +93,7 @@
                 </div>
             </div>
         @empty
-            <div class="rounded-2xl border border-line bg-card/90 px-6 py-14 text-center backdrop-blur">
+            <div class="rounded-2xl border border-line bg-card px-6 py-14 text-center shadow-sm">
                 <svg class="mx-auto mb-3 h-10 w-10 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2"/>
                 </svg>
@@ -111,10 +110,7 @@
     </div>
 
     @if ($orders->hasPages())
-        <div class="mt-5">{{ $orders->links() }}</div>
+        <div class="mt-5">{{ $orders->links('vendor.pagination.admin') }}</div>
     @endif
 
-    <p class="rise mt-6 text-center text-xs text-muted" style="--delay: 280ms">
-        &copy; {{ date('Y') }} Med Alert
-    </p>
 @endsection

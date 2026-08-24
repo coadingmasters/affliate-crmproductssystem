@@ -28,6 +28,7 @@
                     warning:  'rgb(var(--warning) / <alpha-value>)',
                     info:     'rgb(var(--info) / <alpha-value>)',
                     danger:   'rgb(var(--danger) / <alpha-value>)',
+                    sidebar:  'rgb(var(--sidebar) / <alpha-value>)',
                 },
                 fontFamily: {
                     sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
@@ -55,6 +56,7 @@
         --warning:  180 83 9;
         --info:     3 105 161;
         --danger:   190 24 60;
+        --sidebar:  23 31 47;
     }
 
     html { color-scheme: light; }
@@ -104,6 +106,38 @@
         .orb { filter: blur(52px); opacity: .38; }
         .orb-a { width: 260px; height: 260px; top: -90px; left: -80px; }
         .orb-b { width: 240px; height: 240px; bottom: -90px; right: -70px; }
+    }
+
+    /* ---------- Sidebar navigation ---------- */
+    .nav-link {
+        position: relative;
+        transition: color .2s ease, background-color .2s ease;
+    }
+
+    .nav-link::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 3px;
+        height: 0;
+        border-radius: 0 3px 3px 0;
+        background: rgb(var(--brand2));
+        transform: translateY(-50%);
+        transition: height .25s ease;
+    }
+
+    .nav-link:hover::before { height: 55%; }
+    .nav-link.is-active::before { height: 70%; }
+
+    * { scrollbar-width: thin; scrollbar-color: rgb(var(--line)) transparent; }
+    *::-webkit-scrollbar { width: 10px; height: 10px; }
+    *::-webkit-scrollbar-track { background: transparent; }
+    *::-webkit-scrollbar-thumb {
+        background: rgb(var(--line));
+        border-radius: 8px;
+        border: 3px solid transparent;
+        background-clip: content-box;
     }
 
     /* ---------- Entrance ---------- */
