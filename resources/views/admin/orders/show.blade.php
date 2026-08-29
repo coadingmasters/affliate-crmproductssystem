@@ -122,6 +122,43 @@
                 </div>
             @endif
 
+            @if ($order->hasVoiceNote())
+                <div class="rise rounded-2xl border border-line bg-card p-5 sm:p-6" style="--delay: 100ms">
+                    <div class="mb-3 flex items-center gap-2.5">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-14 0m7 7v3m0-6a4 4 0 01-4-4V6a4 4 0 118 0v5a4 4 0 01-4 4z"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <h2 class="text-sm font-semibold text-ink">Customer Voice Note</h2>
+                            <p class="text-xs text-muted">
+                                {{ $order->voice_note_name }} &middot;
+                                added {{ $order->voice_note_uploaded_at?->timezone(config('app.display_timezone'))->diffForHumans() }}
+                            </p>
+                        </div>
+                    </div>
+
+                    @if ($order->voiceNoteIsVideoContainer())
+                        <video controls preload="metadata" class="w-full rounded-xl border border-line" style="max-height: 240px">
+                            <source src="{{ $order->voiceNoteUrl() }}">
+                        </video>
+                    @else
+                        <audio controls preload="metadata" class="w-full">
+                            <source src="{{ $order->voiceNoteUrl() }}">
+                        </audio>
+                    @endif
+
+                    <a href="{{ $order->voiceNoteUrl() }}" download
+                       class="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted transition hover:border-accent hover:text-accent">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-9-4l4 4m0 0l4-4m-4 4V4"/>
+                        </svg>
+                        Download
+                    </a>
+                </div>
+            @endif
+
             <div class="rise overflow-hidden rounded-2xl border border-line bg-card" style="--delay: 120ms">
                 <h2 class="border-b border-line px-5 py-4 text-sm font-semibold text-ink sm:px-6">Order</h2>
 

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\FormBuilderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\CustomerAuthController;
+use App\Http\Controllers\CustomerOrderController;
 use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,6 +40,12 @@ Route::middleware(['auth', 'customer'])->group(function () {
     Route::post('/order', [OrderController::class, 'store'])->name('order.store');
     Route::get('/my-orders', [OrderController::class, 'history'])->name('order.history');
     Route::get('/products/{product}/prices', [OrderController::class, 'prices'])->name('products.prices');
+
+    // The customer's own orders, with filters and voice notes.
+    Route::get('/orders', [CustomerOrderController::class, 'index'])->name('order.list');
+    Route::get('/orders/{order}', [CustomerOrderController::class, 'show'])->name('order.show');
+    Route::post('/orders/{order}/voice-note', [CustomerOrderController::class, 'storeVoiceNote'])->name('order.voice-note.store');
+    Route::delete('/orders/{order}/voice-note', [CustomerOrderController::class, 'destroyVoiceNote'])->name('order.voice-note.destroy');
 });
 
 /*

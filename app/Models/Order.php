@@ -22,6 +22,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'post_date',
     'notes',
     'form_data',
+    'voice_note_path',
+    'voice_note_name',
+    'voice_note_uploaded_at',
 ])]
 class Order extends Model
 {
@@ -89,6 +92,7 @@ class Order extends Model
             'status_changed_at' => 'datetime',
             'post_date' => 'date',
             'form_data' => 'array',
+            'voice_note_uploaded_at' => 'datetime',
         ];
     }
 
@@ -209,6 +213,34 @@ class Order extends Model
     public function postDateLabel(): ?string
     {
         return $this->post_date?->format('M j, Y');
+    }
+
+    /**
+     * Whether a voice note is attached.
+     */
+    public function hasVoiceNote(): bool
+    {
+        return filled($this->voice_note_path);
+    }
+
+    /**
+     * Public URL of the attached voice note, if any.
+     */
+    public function voiceNoteUrl(): ?string
+    {
+        return $this->hasVoiceNote()
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->voice_note_path)
+            : null;
+    }
+
+    /**
+     * Whether the note should play in a video element rather than an audio one.
+     */
+    public function voiceNoteIsVideoContainer(): bool
+    {
+        $extension = strtolower(pathinfo((string) $this->voice_note_path, PATHINFO_EXTENSION));
+
+        return in_array($extension, ['mp4', 'webm', 'mov', '3gp', '3gpp'], true);
     }
 
     /**
