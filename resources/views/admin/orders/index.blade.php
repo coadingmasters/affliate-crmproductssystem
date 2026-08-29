@@ -64,14 +64,64 @@
                 </select>
             </div>
 
-            <div>
-                <label for="user_id" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Submitted by</label>
-                <select name="user_id" id="user_id" class="{{ $input }}">
-                    <option value="">All users</option>
-                    @foreach ($customers as $customer)
-                        <option value="{{ $customer->id }}" @selected($filters['user_id'] === $customer->id)>{{ $customer->name }}</option>
-                    @endforeach
-                </select>
+            {{-- Several accounts can be selected at once --}}
+            <div class="relative" id="user-picker">
+                <label class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Submitted by</label>
+
+                <button type="button" id="user-picker-toggle"
+                        class="{{ $input }} flex items-center justify-between gap-2 text-left"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span id="user-picker-label" class="truncate">
+                        @if (count($filters['user_ids']) === 0)
+                            All users
+                        @elseif (count($filters['user_ids']) === 1)
+                            {{ $customers->firstWhere('id', $filters['user_ids'][0])?->name ?? '1 user' }}
+                        @else
+                            {{ count($filters['user_ids']) }} users selected
+                        @endif
+                    </span>
+                    <svg class="h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <div id="user-picker-panel"
+                     class="absolute left-0 right-0 z-30 mt-1 hidden overflow-hidden rounded-xl border border-line bg-card shadow-2xl">
+                    <div class="border-b border-line p-2">
+                        <input type="search" id="user-picker-search" placeholder="Search accounts"
+                               class="w-full rounded-lg border border-line bg-elevated px-3 py-2 text-sm text-ink placeholder-muted focus:border-accent focus:outline-none">
+                    </div>
+
+                    <div class="max-h-56 overflow-y-auto p-1">
+                        @forelse ($customers as $customer)
+                            <label class="user-option flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition hover:bg-elevated"
+                                   data-name="{{ Str::lower($customer->name.' '.$customer->email) }}">
+                                <input type="checkbox" name="user_ids[]" value="{{ $customer->id }}"
+                                       @checked(in_array($customer->id, $filters['user_ids'], true))
+                                       class="user-checkbox h-4 w-4 rounded border-line text-accent focus:ring-accent/30">
+                                <span class="min-w-0">
+                                    <span class="block truncate font-medium text-ink">{{ $customer->name }}</span>
+                                    <span class="block truncate text-[11px] text-muted">{{ $customer->email }}</span>
+                                </span>
+                            </label>
+                        @empty
+                            <p class="px-2.5 py-4 text-center text-xs text-muted">No customer accounts yet.</p>
+                        @endforelse
+
+                        <p id="user-picker-empty" class="hidden px-2.5 py-4 text-center text-xs text-muted">No accounts match.</p>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-2 border-t border-line bg-elevated px-2.5 py-2">
+                        <button type="button" id="user-picker-clear"
+                                class="rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted transition hover:text-danger">
+                            Clear
+                        </button>
+                        <button type="button" id="user-picker-apply"
+                                class="rounded-lg bg-gradient-to-r from-accent to-accent2 px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90">
+                            Apply
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div>
@@ -182,19 +232,29 @@
                             <td class="whitespace-nowrap px-4 py-3.5 font-semibold text-ink">${{ number_format($order->total_price, 2) }}</td>
                             <td class="whitespace-nowrap px-4 py-3.5 font-semibold text-success">${{ number_format($order->user_commission_total, 2) }}</td>
                             <td class="whitespace-nowrap px-4 py-3.5 font-semibold text-info">${{ number_format($order->admin_commission_total, 2) }}</td>
-                            <td class="px-4 py-3.5">
-                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $order->statusClasses() }}">
-                                    {{ $order->statusLabel() }}
-                                </span>
-                                @if ($order->statusDateValue())
-                                    <span class="mt-1 block whitespace-nowrap text-xs font-medium text-info">
-                                        {{ $order->statusDateLabel() }}: {{ $order->statusDateValue() }}
+                            <td class="px-4 py-3.5" onclick="event.stopPropagation()">
+                                <div class="status-cell" data-order="{{ $order->id }}">
+                                    <div class="relative inline-block">
+                                        <select class="status-select w-full min-w-[9.5rem] cursor-pointer appearance-none rounded-full border-0 py-1 pl-2.5 pr-7 text-xs font-medium transition focus:outline-none focus:ring-2 focus:ring-accent/40 {{ $order->statusClasses() }}"
+                                                data-current="{{ $order->status }}"
+                                                aria-label="Change status of order #{{ $order->id }}">
+                                            @foreach ($statusMeta as $value => $meta)
+                                                <option value="{{ $value }}" @selected($order->status === $value)>{{ $meta['label'] }}</option>
+                                            @endforeach
+                                        </select>
+                                        <svg class="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 opacity-70" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                    </div>
+
+                                    <span class="status-meta mt-1 block whitespace-nowrap text-xs {{ $order->statusDateValue() ? 'font-medium text-info' : 'text-muted' }}">
+                                        @if ($order->statusDateValue())
+                                            {{ $order->statusDateLabel() }}: {{ $order->statusDateValue() }}
+                                        @elseif ($order->statusChangedAt())
+                                            {{ $order->statusChangedAt()->format('M j, g:i A') }}
+                                        @endif
                                     </span>
-                                @elseif ($order->statusChangedAt())
-                                    <span class="mt-1 block whitespace-nowrap text-xs text-muted">
-                                        {{ $order->statusChangedAt()->format('M j, g:i A') }}
-                                    </span>
-                                @endif
+                                </div>
                             </td>
                             <td class="whitespace-nowrap px-4 py-3.5">
                                 <span class="block text-ink">{{ $order->submittedAt()->format('M j, Y') }}</span>
@@ -236,6 +296,48 @@
             @endif
         </div>
     @endif
+
+{{-- Asks for the date when a status needs one --}}
+<div id="date-modal" class="fixed inset-0 z-[110] hidden items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div id="date-modal-backdrop" class="absolute inset-0 bg-ink/50 opacity-0 backdrop-blur-sm transition-opacity duration-200"></div>
+
+    <div id="date-modal-card"
+         class="relative w-full max-w-sm scale-95 overflow-hidden rounded-2xl border border-line bg-card opacity-0 shadow-2xl transition-all duration-200">
+        <div class="p-5 sm:p-6">
+            <div class="mb-4 flex items-start gap-3">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-info/10 text-info">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M4 11h16M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </span>
+                <div class="min-w-0 pt-0.5">
+                    <h2 id="date-modal-title" class="text-base font-semibold text-ink">Choose a date</h2>
+                    <p id="date-modal-help" class="mt-1 text-sm text-muted"></p>
+                </div>
+            </div>
+
+            <input type="date" id="date-modal-input"
+                   class="w-full rounded-xl border border-line bg-elevated px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30">
+            <p id="date-modal-error" class="mt-1.5 hidden text-sm text-danger"></p>
+        </div>
+
+        <div class="flex flex-col-reverse gap-2 border-t border-line bg-elevated px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+            <button type="button" id="date-modal-cancel"
+                    class="w-full rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-elevated sm:w-auto">
+                Cancel
+            </button>
+            <button type="button" id="date-modal-save"
+                    class="w-full rounded-xl bg-gradient-to-r from-accent to-accent2 px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 sm:w-auto">
+                Save
+            </button>
+        </div>
+    </div>
+</div>
+
+{{-- Brief confirmation after a live status change --}}
+<div id="toast" class="pointer-events-none fixed bottom-5 left-1/2 z-[120] hidden -translate-x-1/2">
+    <div id="toast-body" class="rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-medium text-ink shadow-2xl"></div>
+</div>
 @endsection
 
 @push('scripts')
@@ -257,10 +359,276 @@
         });
 
         // These apply immediately; the search box waits for Apply.
-        ['status', 'product_id', 'user_id', 'sort', 'per_page'].forEach(function (id) {
+        ['status', 'product_id', 'sort', 'per_page'].forEach(function (id) {
             document.getElementById(id).addEventListener('change', function () {
                 form.submit();
             });
+        });
+    })();
+
+
+    /* ---------------- multi select for accounts ---------------- */
+    (function () {
+        const wrap = document.getElementById('user-picker');
+
+        if (!wrap) {
+            return;
+        }
+
+        const toggle = document.getElementById('user-picker-toggle');
+        const panel = document.getElementById('user-picker-panel');
+        const label = document.getElementById('user-picker-label');
+        const search = document.getElementById('user-picker-search');
+        const empty = document.getElementById('user-picker-empty');
+        const options = Array.from(wrap.querySelectorAll('.user-option'));
+        const boxes = Array.from(wrap.querySelectorAll('.user-checkbox'));
+        const form = document.getElementById('filter-form');
+
+        function describe() {
+            const chosen = boxes.filter(b => b.checked);
+
+            if (chosen.length === 0) {
+                label.textContent = 'All users';
+            } else if (chosen.length === 1) {
+                label.textContent = chosen[0].closest('.user-option').querySelector('span span').textContent.trim();
+            } else {
+                label.textContent = chosen.length + ' users selected';
+            }
+        }
+
+        function open() {
+            panel.classList.remove('hidden');
+            toggle.setAttribute('aria-expanded', 'true');
+            search.value = '';
+            options.forEach(o => o.classList.remove('hidden'));
+            empty.classList.add('hidden');
+            search.focus();
+        }
+
+        function close() {
+            panel.classList.add('hidden');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+
+        toggle.addEventListener('click', function () {
+            panel.classList.contains('hidden') ? open() : close();
+        });
+
+        document.addEventListener('click', function (event) {
+            if (!wrap.contains(event.target)) {
+                close();
+            }
+        });
+
+        search.addEventListener('input', function () {
+            const term = search.value.trim().toLowerCase();
+            let visible = 0;
+
+            options.forEach(function (option) {
+                const match = !term || option.dataset.name.includes(term);
+                option.classList.toggle('hidden', !match);
+                if (match) visible++;
+            });
+
+            empty.classList.toggle('hidden', visible > 0);
+        });
+
+        boxes.forEach(box => box.addEventListener('change', describe));
+
+        document.getElementById('user-picker-clear').addEventListener('click', function () {
+            boxes.forEach(b => { b.checked = false; });
+            describe();
+            form.submit();
+        });
+
+        document.getElementById('user-picker-apply').addEventListener('click', function () {
+            form.submit();
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !panel.classList.contains('hidden')) {
+                close();
+            }
+        });
+
+        describe();
+    })();
+
+    /* ---------------- inline status editing ---------------- */
+    (function () {
+        const STATUS_DATES = @json(App\Models\Order::STATUS_DATES);
+        const endpoint = @json(route('admin.orders.status', ['order' => '__ORDER__']));
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+
+        const modal = document.getElementById('date-modal');
+        const backdrop = document.getElementById('date-modal-backdrop');
+        const card = document.getElementById('date-modal-card');
+        const title = document.getElementById('date-modal-title');
+        const help = document.getElementById('date-modal-help');
+        const dateInput = document.getElementById('date-modal-input');
+        const dateError = document.getElementById('date-modal-error');
+        const cancelBtn = document.getElementById('date-modal-cancel');
+        const saveBtn = document.getElementById('date-modal-save');
+
+        const toast = document.getElementById('toast');
+        const toastBody = document.getElementById('toast-body');
+
+        let pending = null;
+
+        function showToast(message, isError) {
+            toastBody.textContent = message;
+            toastBody.className = 'rounded-xl border px-4 py-2.5 text-sm font-medium shadow-2xl '
+                + (isError ? 'border-danger/30 bg-danger/10 text-danger' : 'border-success/30 bg-success/10 text-success');
+            toast.classList.remove('hidden');
+            clearTimeout(toast.dataset.timer);
+            toast.dataset.timer = setTimeout(() => toast.classList.add('hidden'), 2600);
+        }
+
+        function openModal(meta) {
+            title.textContent = meta.label;
+            help.textContent = 'Set ' + meta.help + '.';
+            dateInput.value = new Date().toISOString().slice(0, 10);
+            dateError.classList.add('hidden');
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            requestAnimationFrame(function () {
+                backdrop.classList.add('opacity-100');
+                card.classList.remove('scale-95', 'opacity-0');
+            });
+
+            dateInput.focus();
+        }
+
+        function closeModal() {
+            backdrop.classList.remove('opacity-100');
+            card.classList.add('scale-95', 'opacity-0');
+
+            setTimeout(function () {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        }
+
+        function revert() {
+            if (pending) {
+                pending.select.value = pending.previous;
+                paint(pending.select);
+            }
+            pending = null;
+        }
+
+        // Keep the pill's colour in step with the chosen option.
+        function paint(select) {
+            const cell = select.closest('.status-cell');
+            const classes = select.dataset.classes;
+            if (classes) {
+                select.className = select.className.replace(/bg-\S+\/10|text-(warning|info|success|danger|brand|muted|accent)/g, '').trim()
+                    + ' ' + classes;
+            }
+            return cell;
+        }
+
+        async function send(select, status, dateValue) {
+            const cell = select.closest('.status-cell');
+            const orderId = cell.dataset.order;
+            const body = { status: status };
+
+            if (STATUS_DATES[status]) {
+                body[STATUS_DATES[status].column] = dateValue;
+            }
+
+            select.disabled = true;
+
+            try {
+                const response = await fetch(endpoint.replace('__ORDER__', orderId), {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrf,
+                    },
+                    body: JSON.stringify(body),
+                });
+
+                const payload = await response.json();
+
+                if (!response.ok) {
+                    const first = payload.errors ? Object.values(payload.errors).flat()[0] : payload.message;
+                    throw new Error(first || 'Could not update the status.');
+                }
+
+                select.dataset.classes = payload.classes;
+                select.dataset.current = payload.status;
+                paint(select);
+
+                const meta = cell.querySelector('.status-meta');
+                if (payload.date_value) {
+                    meta.textContent = payload.date_label + ': ' + payload.date_value;
+                    meta.className = 'status-meta mt-1 block whitespace-nowrap text-xs font-medium text-info';
+                } else {
+                    meta.textContent = payload.changed_at || '';
+                    meta.className = 'status-meta mt-1 block whitespace-nowrap text-xs text-muted';
+                }
+
+                showToast(payload.message, false);
+                pending = null;
+            } catch (error) {
+                showToast(error.message, true);
+                revert();
+            } finally {
+                select.disabled = false;
+            }
+        }
+
+        document.querySelectorAll('.status-select').forEach(function (select) {
+            select.dataset.classes = select.className.match(/bg-\S+\/10\s+text-\S+/)?.[0] || '';
+
+            select.addEventListener('change', function () {
+                const status = select.value;
+                const previous = select.dataset.current;
+
+                if (status === previous) {
+                    return;
+                }
+
+                if (STATUS_DATES[status]) {
+                    pending = { select: select, status: status, previous: previous };
+                    openModal(STATUS_DATES[status]);
+                    return;
+                }
+
+                send(select, status, null);
+            });
+        });
+
+        saveBtn.addEventListener('click', function () {
+            if (!dateInput.value) {
+                dateError.textContent = 'Pick a date to continue.';
+                dateError.classList.remove('hidden');
+                return;
+            }
+
+            const job = pending;
+            closeModal();
+            send(job.select, job.status, dateInput.value);
+        });
+
+        cancelBtn.addEventListener('click', function () {
+            closeModal();
+            revert();
+        });
+
+        backdrop.addEventListener('click', function () {
+            closeModal();
+            revert();
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (modal.classList.contains('hidden')) return;
+            if (event.key === 'Escape') { closeModal(); revert(); }
+            if (event.key === 'Enter') saveBtn.click();
         });
     })();
 </script>

@@ -11,8 +11,10 @@ use App\Models\User;
 use App\Support\DateRange;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -102,6 +104,42 @@ class OrderController extends Controller
     }
 
     /**
+     * Change an order's status from the list, without a page reload.
+     */
+    public function updateStatus(Request $request, Order $order): JsonResponse
+    {
+        $rules = ['status' => ['required', Rule::in(Order::statuses())]];
+
+        // The date-bearing statuses still demand their date here.
+        foreach (Order::STATUS_DATES as $status => $meta) {
+            $rules[$meta['column']] = [
+                Rule::requiredIf(fn () => $request->input('status') === $status),
+                'nullable',
+                'date',
+            ];
+        }
+
+        $data = $request->validate($rules, [
+            'post_date.required' => 'Enter the date the customer will pay.',
+            'sale_date.required' => 'Enter the date the sale was made.',
+            'return_date.required' => 'Enter the date it is going back.',
+        ]);
+
+        $order->update($data);
+        $order->refresh();
+
+        return response()->json([
+            'status' => $order->status,
+            'label' => $order->statusLabel(),
+            'classes' => $order->statusClasses(),
+            'date_label' => $order->statusDateLabel(),
+            'date_value' => $order->statusDateValue(),
+            'changed_at' => $order->statusChangedAt()?->format('M j, g:i A'),
+            'message' => 'Order #'.$order->id.' set to '.$order->statusLabel().'.',
+        ]);
+    }
+
+    /**
      * Read and sanitise every filter off the request.
      *
      * @return array<string, mixed>
@@ -120,7 +158,13 @@ class OrderController extends Controller
             'from' => DateRange::parseDate($request->query('from')),
             'to' => DateRange::parseDate($request->query('to')),
             'product_id' => $request->query('product_id') ? (int) $request->query('product_id') : null,
-            'user_id' => $request->query('user_id') ? (int) $request->query('user_id') : null,
+            // Several accounts can be inspected side by side.
+            'user_ids' => collect((array) $request->query('user_ids', []))
+                ->filter(fn ($id) => ctype_digit((string) $id))
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->values()
+                ->all(),
             'sort' => array_key_exists((string) $sort, self::SORTS) ? $sort : 'newest',
             'per_page' => in_array($perPage, self::PER_PAGE, true) ? $perPage : 15,
         ];
@@ -162,8 +206,8 @@ class OrderController extends Controller
             $query->where('product_id', $filters['product_id']);
         }
 
-        if ($filters['user_id']) {
-            $query->where('user_id', $filters['user_id']);
+        if (! empty($filters['user_ids'])) {
+            $query->whereIn('user_id', $filters['user_ids']);
         }
 
         [$from, $to] = $this->dateRange($filters);
@@ -211,7 +255,7 @@ class OrderController extends Controller
             $filters['status'] !== 'all',
             $filters['period'] !== 'all',
             $filters['product_id'] !== null,
-            $filters['user_id'] !== null,
+            ! empty($filters['user_ids']),
             $filters['sort'] !== 'newest',
         ])->filter()->count();
     }
