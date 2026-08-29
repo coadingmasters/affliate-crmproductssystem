@@ -136,15 +136,9 @@
                         </div>
                     </div>
 
-                    @if ($order->voiceNoteIsVideoContainer())
-                        <video controls preload="metadata" class="w-full rounded-xl border border-line" style="max-height: 240px">
-                            <source src="{{ $order->voiceNoteUrl() }}">
-                        </video>
-                    @else
-                        <audio controls preload="metadata" class="w-full">
-                            <source src="{{ $order->voiceNoteUrl() }}">
-                        </audio>
-                    @endif
+                    <audio controls preload="metadata" class="w-full">
+                        <source src="{{ $order->voiceNoteUrl() }}">
+                    </audio>
 
                     <a href="{{ $order->voiceNoteUrl() }}" download
                        class="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-muted transition hover:border-accent hover:text-accent">

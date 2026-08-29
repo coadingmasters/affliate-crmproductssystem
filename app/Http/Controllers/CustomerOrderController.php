@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FormField;
 use App\Models\Order;
 use App\Models\Product;
 use App\Support\DateRange;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -30,14 +32,20 @@ class CustomerOrderController extends Controller
     public const PER_PAGE = [10, 25, 50];
 
     /**
-     * Audio and video containers a voice note may use.
+     * Audio containers a voice note may use.
      *
-     * Deliberately broad, since phones record in a variety of formats.
+     * Deliberately broad, since phones and browsers record in a variety of
+     * formats, but video containers are not accepted.
      */
     public const VOICE_EXTENSIONS = [
-        'mp3', 'mp4', 'm4a', 'wav', 'ogg', 'oga', 'opus',
-        'webm', 'aac', 'amr', '3gp', '3gpp', 'flac', 'wma', 'caf', 'mov',
+        'mp3', 'm4a', 'm4b', 'aac', 'wav', 'wave', 'ogg', 'oga', 'opus',
+        'weba', 'amr', 'flac', 'wma', 'caf', 'aiff', 'aif', 'mid', '3ga',
     ];
+
+    /**
+     * The ceiling we allow, regardless of how generous PHP is configured.
+     */
+    public const MAX_UPLOAD_KB = 102400; // 100 MB
 
     /**
      * The customer's own orders, filtered.
@@ -80,8 +88,9 @@ class CustomerOrderController extends Controller
 
         return view('frontend.orders.show', [
             'order' => $order,
-            'customFields' => \App\Models\FormField::all()->keyBy('key'),
+            'customFields' => FormField::all()->keyBy('key'),
             'maxUploadKb' => $this->maxUploadKb(),
+            'intendedMaxKb' => self::MAX_UPLOAD_KB,
             'allowedExtensions' => self::VOICE_EXTENSIONS,
         ]);
     }
@@ -89,7 +98,7 @@ class CustomerOrderController extends Controller
     /**
      * Attach or replace the voice note on an order.
      */
-    public function storeVoiceNote(Request $request, Order $order): RedirectResponse
+    public function storeVoiceNote(Request $request, Order $order): RedirectResponse|JsonResponse
     {
         $this->authorizeOrder($request, $order);
 
@@ -99,11 +108,19 @@ class CustomerOrderController extends Controller
                 'file',
                 'max:'.$this->maxUploadKb(),
                 'extensions:'.implode(',', self::VOICE_EXTENSIONS),
+
+                // Extensions alone are easy to rename, so refuse anything the
+                // server can see is a video.
+                function (string $attribute, $value, callable $fail) {
+                    if ($value && str_starts_with((string) $value->getMimeType(), 'video/')) {
+                        $fail('Video files are not accepted. Please upload a voice recording.');
+                    }
+                },
             ],
         ], [
-            'voice_note.required' => 'Choose a file to upload.',
-            'voice_note.max' => 'That file is larger than the '.round($this->maxUploadKb() / 1024, 1).' MB limit.',
-            'voice_note.extensions' => 'Use an audio or video recording, for example MP3, MP4, M4A, WAV or OGG.',
+            'voice_note.required' => 'Choose a recording to upload.',
+            'voice_note.max' => 'That recording is larger than the '.round($this->maxUploadKb() / 1024).' MB limit.',
+            'voice_note.extensions' => 'Use an audio recording, for example MP3, M4A, WAV, OGG or AMR.',
         ]);
 
         $previous = $order->voice_note_path;
@@ -130,9 +147,20 @@ class CustomerOrderController extends Controller
             Storage::disk('public')->delete($previous);
         }
 
+        $message = $previous ? 'Voice note replaced.' : 'Voice note uploaded.';
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $message,
+                'name' => $order->voice_note_name,
+                'url' => $order->voiceNoteUrl(),
+                'added' => $order->voice_note_uploaded_at?->timezone(config('app.display_timezone'))->diffForHumans(),
+            ]);
+        }
+
         return redirect()
             ->route('order.show', $order)
-            ->with('status', $previous ? 'Voice note replaced.' : 'Voice note uploaded.');
+            ->with('status', $message);
     }
 
     /**
@@ -189,7 +217,7 @@ class CustomerOrderController extends Controller
         $limits = array_filter([
             $toKb((string) ini_get('upload_max_filesize')),
             $toKb((string) ini_get('post_max_size')),
-            20480, // 20 MB ceiling of our own
+            self::MAX_UPLOAD_KB,
         ]);
 
         return max(256, min($limits));

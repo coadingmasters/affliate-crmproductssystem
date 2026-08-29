@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -19,6 +18,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Only MySQL has ENUM; elsewhere the column is already a plain string.
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         $list = "'".implode("','", self::STATUSES)."'";
 
         DB::statement("ALTER TABLE orders MODIFY COLUMN status ENUM($list) NOT NULL DEFAULT 'new'");

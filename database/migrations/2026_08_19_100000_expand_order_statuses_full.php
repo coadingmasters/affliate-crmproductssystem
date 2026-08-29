@@ -65,6 +65,11 @@ return new class extends Migration
      */
     private function setEnum(array $statuses): void
     {
+        // Only MySQL has ENUM; elsewhere the column is already a plain string.
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         $list = "'".implode("','", $statuses)."'";
 
         DB::statement("ALTER TABLE orders MODIFY COLUMN status ENUM($list) NOT NULL DEFAULT 'new'");

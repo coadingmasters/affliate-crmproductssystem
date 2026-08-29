@@ -106,15 +106,9 @@
 
                 @if ($order->hasVoiceNote())
                     <div class="mb-4 rounded-xl border border-line bg-elevated p-3">
-                        @if ($order->voiceNoteIsVideoContainer())
-                            <video controls preload="metadata" class="w-full rounded-lg" style="max-height: 180px">
-                                <source src="{{ $order->voiceNoteUrl() }}">
-                            </video>
-                        @else
-                            <audio controls preload="metadata" class="w-full">
-                                <source src="{{ $order->voiceNoteUrl() }}">
-                            </audio>
-                        @endif
+                        <audio controls preload="metadata" class="w-full">
+                            <source src="{{ $order->voiceNoteUrl() }}">
+                        </audio>
 
                         <p class="mt-2 truncate text-xs font-medium text-ink">{{ $order->voice_note_name }}</p>
                         <p class="text-[11px] text-muted">
@@ -146,27 +140,84 @@
                       enctype="multipart/form-data" id="voice-form" class="space-y-3">
                     @csrf
 
-                    <label for="voice_note" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">
+                    <p class="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted">
                         {{ $order->hasVoiceNote() ? 'Replace recording' : 'Upload a recording' }}
-                    </label>
-
-                    <input type="file" name="voice_note" id="voice_note" required
-                           accept="audio/*,video/*,.mp3,.mp4,.m4a,.wav,.ogg,.opus,.webm,.aac,.amr,.3gp,.flac,.caf"
-                           class="block w-full cursor-pointer rounded-xl border {{ $errors->has('voice_note') ? 'border-danger' : 'border-line' }} bg-elevated text-sm text-muted file:mr-3 file:cursor-pointer file:rounded-l-xl file:border-0 file:bg-brand/10 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-brand hover:file:bg-brand/20">
-
-                    @error('voice_note')
-                        <p class="text-xs font-medium text-danger">{{ $message }}</p>
-                    @enderror
-
-                    <p class="text-[11px] text-muted">
-                        Up to {{ round($maxUploadKb / 1024, 1) }} MB.
-                        Accepts {{ strtoupper(implode(', ', array_slice($allowedExtensions, 0, 6))) }} and more.
                     </p>
 
-                    <button type="submit" id="voice-submit"
-                            class="cta w-full rounded-xl bg-gradient-to-r from-brand to-brand2 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand/25">
-                        <span id="voice-label">{{ $order->hasVoiceNote() ? 'Replace Voice Note' : 'Upload Voice Note' }}</span>
-                    </button>
+                    {{-- Drop zone --}}
+                    <label id="drop-zone"
+                           class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-line bg-elevated px-4 py-7 text-center transition hover:border-brand/50 hover:bg-brand/5">
+                        <span id="drop-icon" class="mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-brand/10 text-brand transition-transform">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-14 0m7 7v3m0-6a4 4 0 01-4-4V6a4 4 0 118 0v5a4 4 0 01-4 4z"/>
+                            </svg>
+                        </span>
+                        <span class="text-sm font-medium text-ink">Drop a recording here</span>
+                        <span class="mt-0.5 text-xs text-muted">or click to choose a file</span>
+
+                        <input type="file" name="voice_note" id="voice_note" class="hidden"
+                               accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.oga,.opus,.weba,.amr,.flac,.wma,.caf,.aiff">
+                    </label>
+
+                    {{-- Chosen file --}}
+                    <div id="file-card" class="hidden rounded-xl border border-line bg-elevated p-3">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19a3 3 0 11-6 0 3 3 0 016 0zm12-3a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                <p id="file-name" class="truncate text-sm font-medium text-ink"></p>
+                                <p id="file-size" class="text-xs text-muted"></p>
+                            </div>
+                            <button type="button" id="file-clear"
+                                    class="shrink-0 rounded-lg p-1.5 text-muted transition hover:bg-danger/10 hover:text-danger"
+                                    aria-label="Remove selected file">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {{-- Progress --}}
+                        <div id="progress-wrap" class="mt-3 hidden">
+                            <div class="mb-1.5 flex items-center justify-between text-xs">
+                                <span id="progress-label" class="font-medium text-ink">Uploading…</span>
+                                <span id="progress-pct" class="font-semibold text-brand">0%</span>
+                            </div>
+                            <div class="h-2 w-full overflow-hidden rounded-full bg-line">
+                                <div id="progress-bar" class="progress-stripes h-full w-0 rounded-full bg-gradient-to-r from-brand to-brand2 transition-[width] duration-200 ease-out"></div>
+                            </div>
+                            <p id="progress-detail" class="mt-1.5 text-[11px] text-muted"></p>
+                        </div>
+                    </div>
+
+                    <p id="voice-error" class="hidden text-xs font-medium text-danger"></p>
+
+                    <p class="text-[11px] text-muted">
+                        Audio only, up to {{ round($maxUploadKb / 1024) }} MB.
+                        MP3, M4A, WAV, OGG, OPUS, AMR, FLAC and more.
+                    </p>
+
+                    @if ($maxUploadKb < $intendedMaxKb)
+                        <p class="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-[11px] text-warning">
+                            This server currently accepts only {{ round($maxUploadKb / 1024, 1) }} MB per upload.
+                            Ask your administrator to raise PHP's upload limit to {{ round($intendedMaxKb / 1024) }} MB.
+                        </p>
+                    @endif
+
+                    <div class="flex items-center gap-2">
+                        <button type="submit" id="voice-submit" disabled
+                                class="cta flex-1 rounded-xl bg-gradient-to-r from-brand to-brand2 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand/25 disabled:cursor-not-allowed disabled:opacity-50">
+                            <span id="voice-label">{{ $order->hasVoiceNote() ? 'Replace Voice Note' : 'Upload Voice Note' }}</span>
+                        </button>
+
+                        <button type="button" id="voice-cancel"
+                                class="hidden rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-muted transition hover:border-danger hover:text-danger">
+                            Cancel
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -174,35 +225,262 @@
 @endsection
 
 @push('scripts')
+<style>
+    /* Moving stripes make a long upload feel alive */
+    .progress-stripes {
+        background-image: linear-gradient(
+            45deg,
+            rgb(255 255 255 / .18) 25%, transparent 25%,
+            transparent 50%, rgb(255 255 255 / .18) 50%,
+            rgb(255 255 255 / .18) 75%, transparent 75%, transparent
+        ), linear-gradient(to right, rgb(var(--brand)), rgb(var(--brand2)));
+        background-size: 1rem 1rem, 100% 100%;
+        animation: stripes 1s linear infinite;
+    }
+
+    @keyframes stripes { from { background-position: 0 0, 0 0; } to { background-position: 1rem 0, 0 0; } }
+
+    @keyframes pulse-ring {
+        0%   { transform: scale(1); }
+        50%  { transform: scale(1.08); }
+        100% { transform: scale(1); }
+    }
+
+    #drop-zone.is-dragging { border-color: rgb(var(--brand)); background: rgb(var(--brand) / .07); }
+    #drop-zone.is-dragging #drop-icon { animation: pulse-ring .9s ease-in-out infinite; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .progress-stripes { animation: none; }
+        #drop-zone.is-dragging #drop-icon { animation: none; }
+    }
+</style>
 <script>
     (function () {
         const form = document.getElementById('voice-form');
-        const input = document.getElementById('voice_note');
-        const button = document.getElementById('voice-submit');
-        const label = document.getElementById('voice-label');
-        const maxKb = @json($maxUploadKb);
 
         if (!form) {
             return;
         }
 
-        // Catch oversized files before the upload starts, since PHP discards
-        // the whole request when it exceeds post_max_size.
-        form.addEventListener('submit', function (event) {
-            const file = input.files[0];
+        const input = document.getElementById('voice_note');
+        const zone = document.getElementById('drop-zone');
+        const card = document.getElementById('file-card');
+        const nameEl = document.getElementById('file-name');
+        const sizeEl = document.getElementById('file-size');
+        const clearBtn = document.getElementById('file-clear');
+        const submit = document.getElementById('voice-submit');
+        const label = document.getElementById('voice-label');
+        const cancelBtn = document.getElementById('voice-cancel');
+        const errorEl = document.getElementById('voice-error');
 
-            if (file && file.size / 1024 > maxKb) {
-                event.preventDefault();
-                Modal.alert({
-                    title: 'File is too large',
-                    message: 'That recording is ' + (file.size / 1048576).toFixed(1)
-                        + ' MB. The limit is ' + (maxKb / 1024).toFixed(1) + ' MB. Please record a shorter note.',
-                });
-                return;
+        const wrap = document.getElementById('progress-wrap');
+        const bar = document.getElementById('progress-bar');
+        const pct = document.getElementById('progress-pct');
+        const detail = document.getElementById('progress-detail');
+        const progressLabel = document.getElementById('progress-label');
+
+        const maxKb = @json($maxUploadKb);
+        const allowed = @json($allowedExtensions);
+        let request = null;
+
+        const humanSize = (bytes) => bytes < 1048576
+            ? (bytes / 1024).toFixed(0) + ' KB'
+            : (bytes / 1048576).toFixed(1) + ' MB';
+
+        function fail(message) {
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        }
+
+        function clearError() {
+            errorEl.classList.add('hidden');
+        }
+
+        // Swap the animated gradient for a flat result colour.
+        function paint(colour) {
+            bar.classList.remove('progress-stripes');
+            bar.style.backgroundImage = 'none';
+            bar.style.backgroundColor = colour;
+        }
+
+        function reset() {
+            input.value = '';
+            card.classList.add('hidden');
+            wrap.classList.add('hidden');
+            submit.disabled = true;
+            cancelBtn.classList.add('hidden');
+            bar.style.width = '0%';
+            bar.style.backgroundImage = '';
+            bar.style.backgroundColor = '';
+            bar.classList.add('progress-stripes');
+            pct.classList.remove('text-success');
+            pct.classList.add('text-brand');
+            pct.textContent = '0%';
+            progressLabel.textContent = 'Uploading…';
+            detail.textContent = '';
+        }
+
+        function choose(file) {
+            clearError();
+
+            if (!file) {
+                return reset();
             }
 
-            button.disabled = true;
+            const extension = (file.name.split('.').pop() || '').toLowerCase();
+            const looksAudio = file.type.startsWith('audio/');
+
+            if (file.type.startsWith('video/')) {
+                return fail('Video files are not accepted. Please choose a voice recording.');
+            }
+
+            if (!looksAudio && !allowed.includes(extension)) {
+                return fail('That is not an audio recording. Try MP3, M4A, WAV, OGG or AMR.');
+            }
+
+            if (file.size / 1024 > maxKb) {
+                return fail('That recording is ' + humanSize(file.size)
+                    + '. The limit is ' + Math.round(maxKb / 1024) + ' MB.');
+            }
+
+            nameEl.textContent = file.name;
+            sizeEl.textContent = humanSize(file.size);
+            card.classList.remove('hidden');
+            submit.disabled = false;
+        }
+
+        input.addEventListener('change', () => choose(input.files[0]));
+        clearBtn.addEventListener('click', reset);
+
+        ['dragenter', 'dragover'].forEach(type => zone.addEventListener(type, (event) => {
+            event.preventDefault();
+            zone.classList.add('is-dragging');
+        }));
+
+        ['dragleave', 'drop'].forEach(type => zone.addEventListener(type, (event) => {
+            event.preventDefault();
+            zone.classList.remove('is-dragging');
+        }));
+
+        zone.addEventListener('drop', function (event) {
+            const file = event.dataTransfer.files[0];
+
+            if (file) {
+                // Put it on the input so a normal submit would still work.
+                const bucket = new DataTransfer();
+                bucket.items.add(file);
+                input.files = bucket.files;
+                choose(file);
+            }
+        });
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const file = input.files[0];
+
+            if (!file) {
+                return fail('Choose a recording first.');
+            }
+
+            clearError();
+            wrap.classList.remove('hidden');
+            cancelBtn.classList.remove('hidden');
+            submit.disabled = true;
             label.textContent = 'Uploading…';
+
+            const body = new FormData(form);
+            const started = Date.now();
+
+            request = new XMLHttpRequest();
+            request.open('POST', form.action);
+            request.setRequestHeader('Accept', 'application/json');
+            request.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').content);
+
+            request.upload.addEventListener('progress', function (event) {
+                if (!event.lengthComputable) {
+                    return;
+                }
+
+                const percent = Math.round((event.loaded / event.total) * 100);
+                bar.style.width = percent + '%';
+                pct.textContent = percent + '%';
+
+                const seconds = Math.max((Date.now() - started) / 1000, 0.1);
+                const speed = event.loaded / seconds;
+                const left = (event.total - event.loaded) / speed;
+
+                detail.textContent = humanSize(event.loaded) + ' of ' + humanSize(event.total)
+                    + ' · ' + humanSize(speed) + '/s'
+                    + (percent < 100 && isFinite(left) ? ' · about ' + Math.ceil(left) + 's left' : '');
+            });
+
+            request.addEventListener('load', function () {
+                let payload = {};
+
+                try {
+                    payload = JSON.parse(request.responseText);
+                } catch (error) {
+                    payload = {};
+                }
+
+                if (request.status >= 200 && request.status < 300) {
+                    paint('rgb(var(--success))');
+                    bar.style.width = '100%';
+                    pct.textContent = '100%';
+                    pct.classList.replace('text-brand', 'text-success');
+                    progressLabel.textContent = 'Done';
+                    detail.textContent = payload.message || 'Uploaded.';
+                    label.textContent = 'Saved';
+                    cancelBtn.classList.add('hidden');
+
+                    // Let the tick register, then show the saved recording.
+                    setTimeout(() => window.location.reload(), 700);
+                    return;
+                }
+
+                let message = payload.errors && payload.errors.voice_note
+                    ? payload.errors.voice_note[0]
+                    : (payload.message || 'Upload failed. Please try again.');
+
+                if (request.status === 413) {
+                    message = 'The server refused the recording because it is too large.';
+                } else if (request.status === 419) {
+                    message = 'Your session expired. Refresh the page and try again.';
+                }
+
+                paint('rgb(var(--danger))');
+                progressLabel.textContent = 'Failed';
+                detail.textContent = '';
+                fail(message);
+                label.textContent = 'Try Again';
+                submit.disabled = false;
+                cancelBtn.classList.add('hidden');
+            });
+
+            request.addEventListener('error', function () {
+                paint('rgb(var(--danger))');
+                progressLabel.textContent = 'Failed';
+                fail('The connection dropped during the upload.');
+                label.textContent = 'Try Again';
+                submit.disabled = false;
+            });
+
+            request.addEventListener('abort', function () {
+                wrap.classList.add('hidden');
+                bar.style.width = '0%';
+                label.textContent = 'Upload Voice Note';
+                submit.disabled = false;
+                cancelBtn.classList.add('hidden');
+            });
+
+            request.send(body);
+        });
+
+        cancelBtn.addEventListener('click', function () {
+            if (request) {
+                request.abort();
+            }
         });
     })();
 </script>

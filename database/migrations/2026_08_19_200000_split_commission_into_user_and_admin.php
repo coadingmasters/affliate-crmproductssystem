@@ -13,8 +13,8 @@ return new class extends Migration
     public function up(): void
     {
         // The existing commission becomes the user's share, so no data is lost.
-        DB::statement('ALTER TABLE product_prices CHANGE commission user_commission DECIMAL(8,2) NOT NULL DEFAULT 0');
-        DB::statement('ALTER TABLE orders CHANGE commission_total user_commission_total DECIMAL(8,2) NOT NULL DEFAULT 0');
+        $this->rename('product_prices', 'commission', 'user_commission');
+        $this->rename('orders', 'commission_total', 'user_commission_total');
 
         Schema::table('product_prices', function (Blueprint $table) {
             $table->decimal('admin_commission', 8, 2)->default(0)->after('user_commission');
@@ -38,7 +38,24 @@ return new class extends Migration
             $table->dropColumn('admin_commission_total');
         });
 
-        DB::statement('ALTER TABLE product_prices CHANGE user_commission commission DECIMAL(8,2) NOT NULL DEFAULT 0');
-        DB::statement('ALTER TABLE orders CHANGE user_commission_total commission_total DECIMAL(8,2) NOT NULL DEFAULT 0');
+        $this->rename('product_prices', 'user_commission', 'commission');
+        $this->rename('orders', 'user_commission_total', 'commission_total');
+    }
+
+    /**
+     * Rename a column, keeping its decimal definition.
+     *
+     * MySQL wants CHANGE with the full type spelled out; every other driver is
+     * happy with the schema builder, which is what the test suite uses.
+     */
+    private function rename(string $table, string $from, string $to): void
+    {
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE {$table} CHANGE {$from} {$to} DECIMAL(8,2) NOT NULL DEFAULT 0");
+
+            return;
+        }
+
+        Schema::table($table, fn (Blueprint $blueprint) => $blueprint->renameColumn($from, $to));
     }
 };

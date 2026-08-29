@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'user_id',
@@ -39,18 +41,18 @@ class Order extends Model
      * @var array<string, array{label: string, tone: string, customer: string}>
      */
     public const STATUS_META = [
-        'new'                     => ['label' => 'New',                     'tone' => 'warning', 'customer' => 'Received'],
-        'callback'                => ['label' => 'Callback',                'tone' => 'brand',   'customer' => 'Callback scheduled'],
+        'new' => ['label' => 'New',                     'tone' => 'warning', 'customer' => 'Received'],
+        'callback' => ['label' => 'Callback',                'tone' => 'brand',   'customer' => 'Callback scheduled'],
         'confirmation_department' => ['label' => 'Confirmation Department', 'tone' => 'info',    'customer' => 'In review'],
-        'post_date'               => ['label' => 'Post Date',               'tone' => 'info',    'customer' => 'Scheduled'],
-        'awaiting_payment'        => ['label' => 'Awaiting Payment',        'tone' => 'warning', 'customer' => 'Awaiting payment'],
-        'sale'                    => ['label' => 'Sale',                    'tone' => 'success', 'customer' => 'Confirmed'],
-        'active_account'          => ['label' => 'Active Account',          'tone' => 'success', 'customer' => 'Active'],
-        'going_to_return'         => ['label' => 'Going to Return',         'tone' => 'danger',  'customer' => 'Return in progress'],
-        'card_declined'           => ['label' => 'Card Declined',           'tone' => 'danger',  'customer' => 'Payment declined'],
-        'confirmation_failure'    => ['label' => 'Confirmation Failure',    'tone' => 'danger',  'customer' => 'Could not confirm'],
-        'duplicate'               => ['label' => 'Duplicate',               'tone' => 'muted',   'customer' => 'Duplicate order'],
-        'cancelled'               => ['label' => 'Cancelled',               'tone' => 'danger',  'customer' => 'Cancelled'],
+        'post_date' => ['label' => 'Post Date',               'tone' => 'info',    'customer' => 'Scheduled'],
+        'awaiting_payment' => ['label' => 'Awaiting Payment',        'tone' => 'warning', 'customer' => 'Awaiting payment'],
+        'sale' => ['label' => 'Sale',                    'tone' => 'success', 'customer' => 'Confirmed'],
+        'active_account' => ['label' => 'Active Account',          'tone' => 'success', 'customer' => 'Active'],
+        'going_to_return' => ['label' => 'Going to Return',         'tone' => 'danger',  'customer' => 'Return in progress'],
+        'card_declined' => ['label' => 'Card Declined',           'tone' => 'danger',  'customer' => 'Payment declined'],
+        'confirmation_failure' => ['label' => 'Confirmation Failure',    'tone' => 'danger',  'customer' => 'Could not confirm'],
+        'duplicate' => ['label' => 'Duplicate',               'tone' => 'muted',   'customer' => 'Duplicate order'],
+        'cancelled' => ['label' => 'Cancelled',               'tone' => 'danger',  'customer' => 'Cancelled'],
     ];
 
     /**
@@ -191,7 +193,7 @@ class Order extends Model
     /**
      * When the order was submitted, in the configured display timezone.
      */
-    public function submittedAt(): \Carbon\CarbonInterface
+    public function submittedAt(): CarbonInterface
     {
         return $this->created_at->timezone(config('app.display_timezone'));
     }
@@ -210,7 +212,7 @@ class Order extends Model
      * An order submitted on the 14th and cleared on the 20th keeps both
      * dates: the submission date never moves, this records the change.
      */
-    public function statusChangedAt(): ?\Carbon\CarbonInterface
+    public function statusChangedAt(): ?CarbonInterface
     {
         return $this->status_changed_at?->timezone(config('app.display_timezone'));
     }
@@ -233,7 +235,7 @@ class Order extends Model
         }
 
         return $this->created_at->diffForHumans($this->status_changed_at, [
-            'syntax' => \Carbon\CarbonInterface::DIFF_ABSOLUTE,
+            'syntax' => CarbonInterface::DIFF_ABSOLUTE,
         ]);
     }
 
@@ -248,7 +250,7 @@ class Order extends Model
     /**
      * The date belonging to the current status, if that status has one.
      */
-    public function statusDate(): ?\Carbon\CarbonInterface
+    public function statusDate(): ?CarbonInterface
     {
         $column = self::STATUS_DATES[$this->status]['column'] ?? null;
 
@@ -305,18 +307,8 @@ class Order extends Model
     public function voiceNoteUrl(): ?string
     {
         return $this->hasVoiceNote()
-            ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->voice_note_path)
+            ? Storage::disk('public')->url($this->voice_note_path)
             : null;
-    }
-
-    /**
-     * Whether the note should play in a video element rather than an audio one.
-     */
-    public function voiceNoteIsVideoContainer(): bool
-    {
-        $extension = strtolower(pathinfo((string) $this->voice_note_path, PATHINFO_EXTENSION));
-
-        return in_array($extension, ['mp4', 'webm', 'mov', '3gp', '3gpp'], true);
     }
 
     /**
