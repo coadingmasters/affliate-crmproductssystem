@@ -30,7 +30,7 @@
 
     {{-- Filter bar --}}
     <form method="GET" action="{{ route('admin.orders.index') }}" id="filter-form"
-          class="rise mb-4 rounded-2xl border border-line bg-card p-4 sm:p-5" style="--delay: 60ms">
+          class="rise relative z-20 mb-4 rounded-2xl border border-line bg-card p-4 sm:p-5" style="--delay: 60ms">
 
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
             <div class="sm:col-span-2 xl:col-span-1">
@@ -86,13 +86,13 @@
                 </button>
 
                 <div id="user-picker-panel"
-                     class="absolute left-0 right-0 z-30 mt-1 hidden overflow-hidden rounded-xl border border-line bg-card shadow-2xl">
+                     class="absolute left-0 right-0 z-40 mt-1 hidden overflow-hidden rounded-xl border border-line bg-card shadow-2xl">
                     <div class="border-b border-line p-2">
                         <input type="search" id="user-picker-search" placeholder="Search accounts"
                                class="w-full rounded-lg border border-line bg-elevated px-3 py-2 text-sm text-ink placeholder-muted focus:border-accent focus:outline-none">
                     </div>
 
-                    <div class="max-h-56 overflow-y-auto p-1">
+                    <div class="max-h-56 overflow-y-auto overscroll-contain p-1">
                         @forelse ($customers as $customer)
                             <label class="user-option flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition hover:bg-elevated"
                                    data-name="{{ Str::lower($customer->name.' '.$customer->email) }}">
@@ -183,7 +183,7 @@
     </form>
 
     {{-- Results --}}
-    <div class="rise overflow-hidden rounded-2xl border border-line bg-card" style="--delay: 120ms">
+    <div class="rise relative z-0 overflow-hidden rounded-2xl border border-line bg-card" style="--delay: 120ms">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">
                 <thead class="bg-elevated text-xs uppercase tracking-wider text-muted">
@@ -549,7 +549,7 @@
 
             if (!badge) {
                 badge = document.createElement('span');
-                badge.className = 'rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white';
+                badge.className = 'rounded-full bg-gradient-to-r from-accent to-accent2 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm shadow-accent/30';
                 link.appendChild(badge);
             }
 

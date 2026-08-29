@@ -41,9 +41,23 @@
 
                 <div>
                     <label for="password" class="mb-1.5 block text-sm font-medium text-ink">Password</label>
-                    <input type="password" name="password" id="password" required autocomplete="current-password"
-                           placeholder="••••••••"
-                           class="{{ $input }} {{ $errors->has('password') ? 'border-danger' : 'border-line' }}">
+                    <div class="relative">
+                        <input type="password" name="password" id="password" required autocomplete="current-password"
+                               placeholder="••••••••"
+                               class="{{ $input }} pr-11 {{ $errors->has('password') ? 'border-danger' : 'border-line' }}">
+
+                    <button type="button" data-password-toggle="password"
+                                aria-pressed="false" aria-label="Show password"
+                                class="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition hover:bg-elevated hover:text-brand">
+                            <svg data-icon="open" class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.04 12.32a1 1 0 010-.64C3.42 7.51 7.36 4.5 12 4.5s8.58 3.01 9.96 7.18a1 1 0 010 .64C20.58 16.49 16.64 19.5 12 19.5s-8.58-3.01-9.96-7.18z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg data-icon="shut" class="hidden h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.73 5.08A10.4 10.4 0 0112 5c4.64 0 8.58 3.01 9.96 7.18a1 1 0 010 .64 10.6 10.6 0 01-2.17 3.53M6.23 6.23A10.7 10.7 0 002.04 11.68a1 1 0 000 .64C3.42 16.49 7.36 19.5 12 19.5c1.77 0 3.43-.44 4.9-1.21M3 3l18 18M9.88 9.88a3 3 0 104.24 4.24"/>
+                            </svg>
+                        </button>
+                    </div>
                     @error('password')
                         <p class="mt-1.5 text-xs font-medium text-danger">{{ $message }}</p>
                     @enderror
@@ -77,3 +91,7 @@
         </p>
     </div>
 @endsection
+
+@push('scripts')
+    @include('partials.password-toggle')
+@endpush

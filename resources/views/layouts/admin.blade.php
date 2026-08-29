@@ -80,7 +80,7 @@
                         </svg>
                         <span class="flex-1">{{ $item['label'] }}</span>
                         @if (! empty($item['badge']))
-                            <span class="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white">{{ $item['badge'] }}</span>
+                            <span class="rounded-full bg-gradient-to-r from-accent to-accent2 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm shadow-accent/30">{{ $item['badge'] }}</span>
                         @endif
                     </a>
                 @endforeach
@@ -115,7 +115,7 @@
 
         {{-- Content --}}
         <div class="flex min-h-screen w-full flex-col lg:pl-64">
-            <header class="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-line bg-card/80 px-4 backdrop-blur-xl sm:px-6">
+            <header class="sticky top-0 z-[25] flex h-16 items-center gap-4 border-b border-line bg-card/80 px-4 backdrop-blur-xl sm:px-6">
                 <button type="button" id="sidebar-toggle"
                         class="rounded-lg p-2 text-muted transition hover:bg-elevated hover:text-ink lg:hidden"
                         aria-label="Toggle navigation">
