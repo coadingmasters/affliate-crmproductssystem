@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\EditOrderRequest;
 use App\Http\Requests\Admin\UpdateOrderRequest;
 use App\Models\FormField;
 use App\Models\Order;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -101,6 +103,119 @@ class OrderController extends Controller
         return redirect()
             ->route('admin.orders.show', $order)
             ->with('status', 'Order updated.');
+    }
+
+    /**
+     * Show the edit form so a mistake on an order can be corrected.
+     */
+    public function edit(Order $order): View
+    {
+        $order->load(['product', 'productPrice']);
+
+        return view('admin.orders.edit', [
+            'order' => $order,
+            'products' => Product::with('prices')->orderBy('name')->get(),
+            'fields' => FormField::visible()->get(),
+        ]);
+    }
+
+    /**
+     * Save the corrected order, recalculating the money from the package.
+     */
+    public function updateDetails(EditOrderRequest $request, Order $order): RedirectResponse
+    {
+        $order->update([
+            ...$request->safe()->only([
+                'full_name', 'email', 'phone', 'address',
+                'product_id', 'product_price_id', 'quantity',
+            ]),
+            ...$request->money(),
+            // Keep answers that are not editable here, such as uploads.
+            'form_data' => array_merge(
+                $order->form_data ?? [],
+                array_filter((array) $request->input('form_data', []), fn ($v) => $v !== null),
+            ),
+        ]);
+
+        return redirect()
+            ->route('admin.orders.show', $order)
+            ->with('status', 'Order #'.$order->id.' updated.');
+    }
+
+    /**
+     * Move an order to the trash.
+     */
+    public function destroy(Request $request, Order $order): RedirectResponse|JsonResponse
+    {
+        $order->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Order #'.$order->id.' moved to trash.',
+                'trashed' => Order::onlyTrashed()->count(),
+            ]);
+        }
+
+        return redirect()
+            ->route('admin.orders.index')
+            ->with('status', 'Order #'.$order->id.' moved to trash.');
+    }
+
+    /**
+     * The trash: orders that were deleted but can still be brought back.
+     */
+    public function trash(Request $request): View
+    {
+        $orders = Order::onlyTrashed()
+            ->with(['product', 'productPrice', 'user'])
+            ->when($request->query('q'), function (Builder $query, $term) {
+                $term = '%'.$term.'%';
+
+                $query->where(fn (Builder $q) => $q
+                    ->where('full_name', 'like', $term)
+                    ->orWhere('email', 'like', $term)
+                    ->orWhere('phone', 'like', $term));
+            })
+            ->orderByDesc('deleted_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('admin.orders.trash', [
+            'orders' => $orders,
+            'search' => (string) $request->query('q', ''),
+        ]);
+    }
+
+    /**
+     * Put a trashed order back.
+     */
+    public function restore(int $orderId): RedirectResponse
+    {
+        $order = Order::onlyTrashed()->findOrFail($orderId);
+        $order->restore();
+
+        return redirect()
+            ->route('admin.orders.trash')
+            ->with('status', 'Order #'.$order->id.' restored.');
+    }
+
+    /**
+     * Delete a trashed order for good.
+     */
+    public function forceDelete(int $orderId): RedirectResponse
+    {
+        $order = Order::onlyTrashed()->findOrFail($orderId);
+
+        // Take the voice note with it, so nothing is orphaned on disk.
+        if ($order->voice_note_path) {
+            Storage::disk('public')->delete($order->voice_note_path);
+        }
+
+        $order->forceDelete();
+
+        return redirect()
+            ->route('admin.orders.trash')
+            ->with('status', 'Order #'.$orderId.' deleted permanently.');
     }
 
     /**

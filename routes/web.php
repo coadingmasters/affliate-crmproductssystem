@@ -74,6 +74,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('form-builder', [FormBuilderController::class, 'save'])->name('form-builder.save');
 
         Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
+        Route::get('orders/trash', [AdminOrderController::class, 'trash'])->name('orders.trash');
+        Route::post('orders/{order}/restore', [AdminOrderController::class, 'restore'])->name('orders.restore');
+        Route::delete('orders/{order}/force', [AdminOrderController::class, 'forceDelete'])->name('orders.force-delete');
+        Route::get('orders/{order}/edit', [AdminOrderController::class, 'edit'])->name('orders.edit');
+        Route::put('orders/{order}/details', [AdminOrderController::class, 'updateDetails'])->name('orders.details');
+        Route::delete('orders/{order}', [AdminOrderController::class, 'destroy'])->name('orders.destroy');
         Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
         Route::put('orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
         Route::patch('orders/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.status');

@@ -201,11 +201,13 @@
                         <th class="px-4 py-3.5 font-medium">Admin Commission</th>
                         <th class="px-4 py-3.5 font-medium">Status</th>
                         <th class="px-4 py-3.5 font-medium">Submitted</th>
+                        <th class="px-4 py-3.5 text-right font-medium">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-line">
                     @forelse ($orders as $order)
-                        <tr class="row-hover cursor-pointer hover:bg-elevated"
+                        <tr id="order-row-{{ $order->id }}"
+                            class="row-hover cursor-pointer transition-all duration-300 hover:bg-elevated"
                             onclick="window.location='{{ route('admin.orders.show', $order) }}'">
                             <td class="whitespace-nowrap px-4 py-3.5 font-semibold text-accent">#{{ $order->id }}</td>
                             <td class="whitespace-nowrap px-4 py-3.5">
@@ -263,10 +265,29 @@
                                     &middot; {{ $order->submittedAt()->diffForHumans() }}
                                 </span>
                             </td>
+
+                            <td class="px-4 py-3.5" onclick="event.stopPropagation()">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <a href="{{ route('admin.orders.edit', $order) }}" title="Edit order"
+                                       class="rounded-lg border border-line p-1.5 text-muted transition hover:border-accent hover:bg-accent/10 hover:text-accent">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.4-9.6a2 2 0 112.8 2.8L12 16l-4 1 1-4 9.6-9.6z"/>
+                                        </svg>
+                                    </a>
+
+                                    <button type="button" title="Move to trash"
+                                            class="trash-btn rounded-lg border border-line p-1.5 text-muted transition hover:border-danger hover:bg-danger/10 hover:text-danger"
+                                            data-order="{{ $order->id }}" data-name="{{ $order->full_name }}">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.87 12.14A2 2 0 0116.14 21H7.86a2 2 0 01-1.99-1.86L5 7m5 4v6m4-6v6M9 7V4h6v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="13" class="px-4 py-14 text-center">
+                            <td colspan="14" class="px-4 py-14 text-center">
                                 <p class="text-muted">No orders match these filters.</p>
                                 @if ($activeFilterCount > 0)
                                     <a href="{{ route('admin.orders.index') }}" class="mt-2 inline-block text-sm font-medium text-accent hover:underline">
@@ -452,6 +473,92 @@
         });
 
         describe();
+    })();
+
+
+    /* ---------------- move an order to the trash ---------------- */
+    (function () {
+        const endpoint = @json(route('admin.orders.destroy', ['order' => '__ORDER__']));
+        const csrf = document.querySelector('meta[name="csrf-token"]').content;
+        const toast = document.getElementById('toast');
+        const toastBody = document.getElementById('toast-body');
+
+        function showToast(message, isError) {
+            toastBody.textContent = message;
+            toastBody.className = 'rounded-xl border px-4 py-2.5 text-sm font-medium shadow-2xl '
+                + (isError ? 'border-danger/30 bg-danger/10 text-danger' : 'border-success/30 bg-success/10 text-success');
+            toast.classList.remove('hidden');
+            clearTimeout(toast.dataset.timer);
+            toast.dataset.timer = setTimeout(() => toast.classList.add('hidden'), 2600);
+        }
+
+        document.querySelectorAll('.trash-btn').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const id = button.dataset.order;
+
+                Modal.confirm({
+                    title: 'Move to trash',
+                    message: 'Order #' + id + ' from ' + button.dataset.name
+                        + ' will be moved to the trash. You can restore it from there.',
+                    confirmText: 'Move to trash',
+                    onConfirm: async function () {
+                        const row = document.getElementById('order-row-' + id);
+
+                        try {
+                            const response = await fetch(endpoint.replace('__ORDER__', id), {
+                                method: 'DELETE',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': csrf,
+                                },
+                            });
+
+                            const payload = await response.json();
+
+                            if (!response.ok) {
+                                throw new Error(payload.message || 'Could not delete the order.');
+                            }
+
+                            // Slide it away towards the sidebar, then drop it.
+                            row.style.transition = 'opacity .35s ease, transform .35s ease';
+                            row.style.opacity = '0';
+                            row.style.transform = 'translateX(-2rem) scale(.98)';
+
+                            setTimeout(function () {
+                                row.remove();
+                                showToast(payload.message, false);
+                                bumpTrashBadge(payload.trashed);
+                            }, 350);
+                        } catch (error) {
+                            showToast(error.message, true);
+                        }
+                    },
+                });
+            });
+        });
+
+        // Keep the sidebar count honest without a reload.
+        function bumpTrashBadge(count) {
+            const link = document.querySelector('a[href$="/admin/orders/trash"]');
+
+            if (!link) {
+                return;
+            }
+
+            let badge = link.querySelector('span.rounded-full');
+
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white';
+                link.appendChild(badge);
+            }
+
+            badge.textContent = count;
+            badge.animate(
+                [{ transform: 'scale(1)' }, { transform: 'scale(1.35)' }, { transform: 'scale(1)' }],
+                { duration: 400, easing: 'ease-out' },
+            );
+        }
     })();
 
     /* ---------------- inline status editing ---------------- */

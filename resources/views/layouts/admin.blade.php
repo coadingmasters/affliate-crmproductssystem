@@ -18,8 +18,15 @@
         [
             'route' => 'admin.orders.index',
             'label' => 'Orders',
-            'active' => 'admin.orders.*',
+            'active' => 'admin.orders.index|admin.orders.show|admin.orders.edit',
             'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+        ],
+        [
+            'route' => 'admin.orders.trash',
+            'label' => 'Trash',
+            'active' => 'admin.orders.trash',
+            'icon' => 'M19 7l-.87 12.14A2 2 0 0116.14 21H7.86a2 2 0 01-1.99-1.86L5 7m5 4v6m4-6v6M9 7V4h6v3M4 7h16',
+            'badge' => \App\Models\Order::onlyTrashed()->count(),
         ],
         [
             'route' => 'admin.form-builder',
@@ -71,7 +78,10 @@
                         <svg class="h-[18px] w-[18px] {{ $isActive ? 'text-accent2' : '' }}" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}"/>
                         </svg>
-                        {{ $item['label'] }}
+                        <span class="flex-1">{{ $item['label'] }}</span>
+                        @if (! empty($item['badge']))
+                            <span class="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white">{{ $item['badge'] }}</span>
+                        @endif
                     </a>
                 @endforeach
             </nav>
