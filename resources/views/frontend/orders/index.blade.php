@@ -134,6 +134,11 @@
                             @endif
                         </div>
                         <p class="mt-1 text-sm text-muted">Submitted {{ $order->submittedAtLabel() }}</p>
+                        @if ($order->statusDateValue())
+                            <p class="mt-0.5 text-xs font-semibold text-brand">
+                                {{ $order->statusDateLabel() }}: {{ $order->statusDateValue() }}
+                            </p>
+                        @endif
                     </div>
 
                     <div class="text-right">

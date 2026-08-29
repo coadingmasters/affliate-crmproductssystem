@@ -48,12 +48,12 @@
                         <dt class="text-xs uppercase tracking-wider text-muted">Submitted</dt>
                         <dd class="mt-1 text-sm font-medium text-ink">{{ $order->submittedAtLabel() }}</dd>
                     </div>
-                    @if ($order->post_date)
+                    @foreach ($order->allStatusDates() as $dateLabel => $dateValue)
                         <div>
-                            <dt class="text-xs uppercase tracking-wider text-muted">Payment Date</dt>
-                            <dd class="mt-1 text-sm font-medium text-ink">{{ $order->postDateLabel() }}</dd>
+                            <dt class="text-xs uppercase tracking-wider text-muted">{{ $dateLabel }}</dt>
+                            <dd class="mt-1 text-sm font-medium text-ink">{{ $dateValue }}</dd>
                         </div>
-                    @endif
+                    @endforeach
                     <div class="sm:col-span-2">
                         <dt class="text-xs uppercase tracking-wider text-muted">Delivery Address</dt>
                         <dd class="mt-1 whitespace-pre-line rounded-xl border border-line bg-elevated p-3 text-sm font-medium text-ink">{{ $order->address }}</dd>

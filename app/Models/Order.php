@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'admin_commission_total',
     'status',
     'post_date',
+    'sale_date',
+    'return_date',
     'notes',
     'form_data',
     'voice_note_path',
@@ -46,6 +48,29 @@ class Order extends Model
         'confirmation_failure'    => ['label' => 'Confirmation Failure',    'tone' => 'danger',  'customer' => 'Could not confirm'],
         'duplicate'               => ['label' => 'Duplicate',               'tone' => 'muted',   'customer' => 'Duplicate order'],
         'cancelled'               => ['label' => 'Cancelled',               'tone' => 'danger',  'customer' => 'Cancelled'],
+    ];
+
+    /**
+     * Statuses that ask the admin for a date, and where that date is kept.
+     *
+     * @var array<string, array{column: string, label: string, help: string}>
+     */
+    public const STATUS_DATES = [
+        'post_date' => [
+            'column' => 'post_date',
+            'label' => 'Payment Date',
+            'help' => 'when the customer will pay',
+        ],
+        'sale' => [
+            'column' => 'sale_date',
+            'label' => 'Sale Date',
+            'help' => 'when the sale was made',
+        ],
+        'going_to_return' => [
+            'column' => 'return_date',
+            'label' => 'Return Date',
+            'help' => 'when it is going back',
+        ],
     ];
 
     /**
@@ -91,6 +116,8 @@ class Order extends Model
             'admin_commission_total' => 'decimal:2',
             'status_changed_at' => 'datetime',
             'post_date' => 'date',
+            'sale_date' => 'date',
+            'return_date' => 'date',
             'form_data' => 'array',
             'voice_note_uploaded_at' => 'datetime',
         ];
@@ -213,6 +240,52 @@ class Order extends Model
     public function postDateLabel(): ?string
     {
         return $this->post_date?->format('M j, Y');
+    }
+
+    /**
+     * The date belonging to the current status, if that status has one.
+     */
+    public function statusDate(): ?\Carbon\CarbonInterface
+    {
+        $column = self::STATUS_DATES[$this->status]['column'] ?? null;
+
+        return $column ? $this->{$column} : null;
+    }
+
+    /**
+     * What that date is called, e.g. "Sale Date".
+     */
+    public function statusDateLabel(): ?string
+    {
+        return self::STATUS_DATES[$this->status]['label'] ?? null;
+    }
+
+    /**
+     * That date formatted for display, or null.
+     */
+    public function statusDateValue(): ?string
+    {
+        return $this->statusDate()?->format('M j, Y');
+    }
+
+    /**
+     * Every date this order has picked up, keyed by its label.
+     *
+     * @return array<string, string>
+     */
+    public function allStatusDates(): array
+    {
+        $dates = [];
+
+        foreach (self::STATUS_DATES as $meta) {
+            $value = $this->{$meta['column']};
+
+            if ($value) {
+                $dates[$meta['label']] = $value->format('M j, Y');
+            }
+        }
+
+        return $dates;
     }
 
     /**

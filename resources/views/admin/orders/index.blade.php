@@ -186,9 +186,9 @@
                                 <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium {{ $order->statusClasses() }}">
                                     {{ $order->statusLabel() }}
                                 </span>
-                                @if ($order->post_date)
+                                @if ($order->statusDateValue())
                                     <span class="mt-1 block whitespace-nowrap text-xs font-medium text-info">
-                                        Pays {{ $order->postDateLabel() }}
+                                        {{ $order->statusDateLabel() }}: {{ $order->statusDateValue() }}
                                     </span>
                                 @elseif ($order->statusChangedAt())
                                     <span class="mt-1 block whitespace-nowrap text-xs text-muted">

@@ -23,18 +23,22 @@ class UpdateOrderRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'status' => ['required', Rule::in(Order::statuses())],
-
-            // Only meaningful for the Post Date status, and required there.
-            'post_date' => [
-                Rule::requiredIf(fn () => $this->input('status') === 'post_date'),
-                'nullable',
-                'date',
-            ],
-
             'notes' => ['nullable', 'string', 'max:5000'],
         ];
+
+        // Post Date, Sale and Going to Return each carry their own date,
+        // required when that status is the one being set.
+        foreach (Order::STATUS_DATES as $status => $meta) {
+            $rules[$meta['column']] = [
+                Rule::requiredIf(fn () => $this->input('status') === $status),
+                'nullable',
+                'date',
+            ];
+        }
+
+        return $rules;
     }
 
     /**
@@ -46,6 +50,8 @@ class UpdateOrderRequest extends FormRequest
     {
         return [
             'post_date.required' => 'Enter the date the customer will pay.',
+            'sale_date.required' => 'Enter the date the sale was made.',
+            'return_date.required' => 'Enter the date it is going back.',
         ];
     }
 }

@@ -63,15 +63,12 @@
                             @endif
                         </dd>
                     </div>
-                    @if ($order->post_date)
+                    @foreach ($order->allStatusDates() as $dateLabel => $dateValue)
                         <div>
-                            <dt class="text-xs uppercase tracking-wider text-muted">Payment Date</dt>
-                            <dd class="mt-1 text-sm font-medium text-ink">
-                                {{ $order->postDateLabel() }}
-                                <span class="block text-xs font-normal text-muted">{{ $order->post_date->diffForHumans() }}</span>
-                            </dd>
+                            <dt class="text-xs uppercase tracking-wider text-muted">{{ $dateLabel }}</dt>
+                            <dd class="mt-1 text-sm font-medium text-ink">{{ $dateValue }}</dd>
                         </div>
-                    @endif
+                    @endforeach
                     <div>
                         <dt class="text-xs uppercase tracking-wider text-muted">Account</dt>
                         <dd class="mt-1 text-sm font-medium text-ink">
@@ -224,20 +221,24 @@
                         @enderror
                     </div>
 
-                    {{-- Shown only for the Post Date status: when the customer pays --}}
-                    <div id="post-date-field" class="{{ old('status', $order->status) === 'post_date' ? '' : 'hidden' }}">
-                        <label for="post_date" class="mb-1.5 block text-sm font-medium text-ink">
-                            Payment Date
-                            <span class="font-normal text-muted">&mdash; when the customer will pay</span>
-                        </label>
-                        <input type="date" name="post_date" id="post_date"
-                               value="{{ old('post_date', $order->post_date?->format('Y-m-d')) }}"
-                               class="w-full rounded-xl border bg-elevated px-3.5 py-2.5 text-sm text-ink transition focus:outline-none focus:ring-2 focus:ring-accent/30
-                                      {{ $errors->has('post_date') ? 'border-danger' : 'border-line focus:border-accent' }}">
-                        @error('post_date')
-                            <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    {{-- Each of these statuses asks for its own date --}}
+                    @foreach (App\Models\Order::STATUS_DATES as $statusKey => $meta)
+                        @php $column = $meta['column']; @endphp
+                        <div class="status-date-field {{ old('status', $order->status) === $statusKey ? '' : 'hidden' }}"
+                             data-status="{{ $statusKey }}">
+                            <label for="{{ $column }}" class="mb-1.5 block text-sm font-medium text-ink">
+                                {{ $meta['label'] }}
+                                <span class="font-normal text-muted">&mdash; {{ $meta['help'] }}</span>
+                            </label>
+                            <input type="date" name="{{ $column }}" id="{{ $column }}"
+                                   value="{{ old($column, $order->{$column}?->format('Y-m-d')) }}"
+                                   class="w-full rounded-xl border bg-elevated px-3.5 py-2.5 text-sm text-ink transition focus:outline-none focus:ring-2 focus:ring-accent/30
+                                          {{ $errors->has($column) ? 'border-danger' : 'border-line focus:border-accent' }}">
+                            @error($column)
+                                <p class="mt-1.5 text-sm text-danger">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    @endforeach
 
                     <div>
                         <label for="notes" class="mb-1.5 block text-sm font-medium text-ink">Internal Notes</label>
@@ -264,20 +265,24 @@
 <script>
     (function () {
         const status = document.getElementById('status');
-        const field = document.getElementById('post-date-field');
+        const fields = Array.from(document.querySelectorAll('.status-date-field'));
 
-        if (!status || !field) {
+        if (!status || fields.length === 0) {
             return;
         }
 
-        status.addEventListener('change', function () {
-            const needsDate = status.value === 'post_date';
-            field.classList.toggle('hidden', !needsDate);
+        function sync() {
+            fields.forEach(function (wrapper) {
+                const matches = wrapper.dataset.status === status.value;
+                wrapper.classList.toggle('hidden', !matches);
 
-            if (needsDate) {
-                field.querySelector('input').focus();
-            }
-        });
+                if (matches) {
+                    wrapper.querySelector('input').focus();
+                }
+            });
+        }
+
+        status.addEventListener('change', sync);
     })();
 </script>
 @endpush
