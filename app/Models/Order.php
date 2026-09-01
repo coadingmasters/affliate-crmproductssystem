@@ -41,7 +41,7 @@ class Order extends Model
      * @var array<string, array{label: string, tone: string, customer: string}>
      */
     public const STATUS_META = [
-        'new' => ['label' => 'New',                     'tone' => 'warning', 'customer' => 'Received'],
+        'new' => ['label' => 'New',                     'tone' => 'warning', 'customer' => 'New'],
         'callback' => ['label' => 'Callback',                'tone' => 'brand',   'customer' => 'Callback scheduled'],
         'confirmation_department' => ['label' => 'Confirmation Department', 'tone' => 'info',    'customer' => 'In review'],
         'post_date' => ['label' => 'Post Date',               'tone' => 'info',    'customer' => 'Scheduled'],
