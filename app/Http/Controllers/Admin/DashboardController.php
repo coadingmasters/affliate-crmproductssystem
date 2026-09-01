@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\User;
 use App\Support\DateRange;
+use App\Support\OrderFilters;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -29,14 +32,12 @@ class DashboardController extends Controller
      */
     public function index(Request $request): View
     {
-        $filters = $this->filters($request);
-        [$from, $to] = DateRange::resolve($filters['period'], $filters['from'], $filters['to']);
+        $filters = OrderFilters::parse($request);
+        [$from, $to] = OrderFilters::range($filters);
 
-        // Every figure on the page is built from this same scope.
-        $scope = fn () => Order::query()
-            ->when($from, fn (Builder $q) => $q->where('created_at', '>=', $from))
-            ->when($to, fn (Builder $q) => $q->where('created_at', '<=', $to))
-            ->when($filters['product_id'], fn (Builder $q) => $q->where('product_id', $filters['product_id']));
+        // Every figure on the page is built from this same scope, and it is
+        // the same filter set the orders list uses.
+        $scope = fn () => Order::query()->tap(fn (Builder $q) => OrderFilters::apply($q, $filters));
 
         $counts = $scope()
             ->selectRaw('status, count(*) as total')
@@ -90,26 +91,11 @@ class DashboardController extends Controller
             'filters' => $filters,
             'periods' => DateRange::PERIODS,
             'products' => Product::orderBy('name')->get(['id', 'name']),
+            'customers' => User::where('role', 'user')->orderBy('name')->get(['id', 'name', 'email']),
+            'statusMeta' => Order::STATUS_META,
             'rangeLabel' => DateRange::label($filters['period'], $filters['from'], $filters['to']),
-            'activeFilterCount' => ($filters['period'] !== 'all' ? 1 : 0) + ($filters['product_id'] ? 1 : 0),
+            'activeFilterCount' => OrderFilters::activeCount($filters),
         ]);
-    }
-
-    /**
-     * Read and sanitise the dashboard filters.
-     *
-     * @return array<string, mixed>
-     */
-    private function filters(Request $request): array
-    {
-        $period = $request->query('period');
-
-        return [
-            'period' => array_key_exists((string) $period, DateRange::PERIODS) ? $period : 'all',
-            'from' => DateRange::parseDate($request->query('from')),
-            'to' => DateRange::parseDate($request->query('to')),
-            'product_id' => $request->query('product_id') ? (int) $request->query('product_id') : null,
-        ];
     }
 
     /**
@@ -134,9 +120,12 @@ class DashboardController extends Controller
 
         $byMonth = $start->diffInDays($end) > self::DAILY_LIMIT;
 
-        $bucket = $byMonth
-            ? "DATE_FORMAT(created_at, '%Y-%m-01')"
-            : 'DATE(created_at)';
+        // DATE_FORMAT is MySQL only; SQLite spells the same thing strftime.
+        $bucket = match (true) {
+            ! $byMonth => 'DATE(created_at)',
+            DB::getDriverName() === 'mysql' => "DATE_FORMAT(created_at, '%Y-%m-01')",
+            default => "strftime('%Y-%m-01', created_at)",
+        };
 
         $rows = $scope()
             ->where('created_at', '>=', $start->utc())

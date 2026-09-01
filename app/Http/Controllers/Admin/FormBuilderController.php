@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\FormField;
+use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,7 @@ class FormBuilderController extends Controller
     {
         return view('admin.form-builder.preview', [
             'fields' => FormField::visible()->get(),
-            'products' => \App\Models\Product::active()->orderBy('name')->get(),
+            'products' => Product::active()->orderBy('name')->get(),
         ]);
     }
 

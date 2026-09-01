@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\DateRange;
+use App\Support\OrderFilters;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -261,25 +262,10 @@ class OrderController extends Controller
      */
     private function filters(Request $request): array
     {
-        $status = $request->query('status');
-        $period = $request->query('period');
         $sort = $request->query('sort');
         $perPage = (int) $request->query('per_page', 15);
 
-        return [
-            'q' => trim((string) $request->query('q', '')),
-            'status' => in_array($status, Order::statuses(), true) ? $status : 'all',
-            'period' => array_key_exists((string) $period, self::PERIODS) ? $period : 'all',
-            'from' => DateRange::parseDate($request->query('from')),
-            'to' => DateRange::parseDate($request->query('to')),
-            'product_id' => $request->query('product_id') ? (int) $request->query('product_id') : null,
-            // Several accounts can be inspected side by side.
-            'user_ids' => collect((array) $request->query('user_ids', []))
-                ->filter(fn ($id) => ctype_digit((string) $id))
-                ->map(fn ($id) => (int) $id)
-                ->unique()
-                ->values()
-                ->all(),
+        return OrderFilters::parse($request) + [
             'sort' => array_key_exists((string) $sort, self::SORTS) ? $sort : 'newest',
             'per_page' => in_array($perPage, self::PER_PAGE, true) ? $perPage : 15,
         ];
@@ -292,48 +278,7 @@ class OrderController extends Controller
      */
     private function applyFilters(Builder $query, array $filters): void
     {
-        if ($filters['q'] !== '') {
-            $term = '%'.$filters['q'].'%';
-
-            $query->where(function (Builder $q) use ($term, $filters) {
-                $q->where('full_name', 'like', $term)
-                    ->orWhere('email', 'like', $term)
-                    ->orWhere('phone', 'like', $term)
-                    ->orWhere('address', 'like', $term);
-
-                // Let a bare number match the order id too.
-                if (ctype_digit($filters['q'])) {
-                    $q->orWhere('id', (int) $filters['q']);
-                }
-
-                // Match the account that submitted it too.
-                $q->orWhereHas('user', function (Builder $u) use ($term) {
-                    $u->where('name', 'like', $term)->orWhere('email', 'like', $term);
-                });
-            });
-        }
-
-        if ($filters['status'] !== 'all') {
-            $query->where('status', $filters['status']);
-        }
-
-        if ($filters['product_id']) {
-            $query->where('product_id', $filters['product_id']);
-        }
-
-        if (! empty($filters['user_ids'])) {
-            $query->whereIn('user_id', $filters['user_ids']);
-        }
-
-        [$from, $to] = $this->dateRange($filters);
-
-        if ($from) {
-            $query->where('created_at', '>=', $from);
-        }
-
-        if ($to) {
-            $query->where('created_at', '<=', $to);
-        }
+        OrderFilters::apply($query, $filters);
 
         match ($filters['sort']) {
             'oldest' => $query->oldest(),
@@ -355,7 +300,7 @@ class OrderController extends Controller
      */
     private function dateRange(array $filters): array
     {
-        return DateRange::resolve($filters['period'], $filters['from'], $filters['to']);
+        return OrderFilters::range($filters);
     }
 
     /**
@@ -365,13 +310,7 @@ class OrderController extends Controller
      */
     private function activeFilterCount(array $filters): int
     {
-        return collect([
-            $filters['q'] !== '',
-            $filters['status'] !== 'all',
-            $filters['period'] !== 'all',
-            $filters['product_id'] !== null,
-            ! empty($filters['user_ids']),
-            $filters['sort'] !== 'newest',
-        ])->filter()->count();
+        return OrderFilters::activeCount($filters)
+            + ($filters['sort'] !== 'newest' ? 1 : 0);
     }
 }

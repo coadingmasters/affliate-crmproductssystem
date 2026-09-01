@@ -92,13 +92,32 @@
 @section('content')
 
     {{-- Filter bar: every figure below reflects this selection --}}
+    @php
+        $input = 'w-full rounded-xl border border-line bg-elevated px-3.5 py-2.5 text-sm text-ink placeholder-muted transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30';
+    @endphp
+
+    {{-- `.rise` leaves a stacking context behind, so the cards below would
+         otherwise paint over the open account dropdown. --}}
     <form method="GET" action="{{ route('admin.dashboard') }}" id="dash-filter"
-          class="rise mb-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          class="rise relative z-20 mb-4 rounded-2xl border border-line bg-card p-4 sm:p-5">
+
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+
+            <div class="sm:col-span-2 xl:col-span-1">
+                <label for="q" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Search</label>
+                <div class="relative">
+                    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+                    </svg>
+                    <input type="search" name="q" id="q" value="{{ $filters['q'] }}"
+                           placeholder="Customer, account, phone or #id"
+                           class="{{ $input }} pl-9">
+                </div>
+            </div>
+
             <div>
                 <label for="period" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Date range</label>
-                <select name="period" id="period"
-                        class="w-full rounded-xl border border-line bg-elevated px-3.5 py-2.5 text-sm text-ink transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30">
+                <select name="period" id="period" class="{{ $input }}">
                     @foreach ($periods as $value => $label)
                         <option value="{{ $value }}" @selected($filters['period'] === $value)>{{ $label }}</option>
                     @endforeach
@@ -107,8 +126,7 @@
 
             <div>
                 <label for="product_id" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Product</label>
-                <select name="product_id" id="product_id"
-                        class="w-full rounded-xl border border-line bg-elevated px-3.5 py-2.5 text-sm text-ink transition focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30">
+                <select name="product_id" id="product_id" class="{{ $input }}">
                     <option value="">All products</option>
                     @foreach ($products as $product)
                         <option value="{{ $product->id }}" @selected($filters['product_id'] === $product->id)>{{ $product->name }}</option>
@@ -116,16 +134,84 @@
                 </select>
             </div>
 
+            {{-- Several accounts can be compared at once --}}
+            <div class="relative" id="user-picker">
+                <label class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Submitted by</label>
+
+                <button type="button" id="user-picker-toggle"
+                        class="{{ $input }} flex items-center justify-between gap-2 text-left"
+                        aria-haspopup="true" aria-expanded="false">
+                    <span id="user-picker-label" class="truncate">
+                        @if (count($filters['user_ids']) === 0)
+                            All users
+                        @elseif (count($filters['user_ids']) === 1)
+                            {{ $customers->firstWhere('id', $filters['user_ids'][0])?->name ?? '1 user' }}
+                        @else
+                            {{ count($filters['user_ids']) }} users selected
+                        @endif
+                    </span>
+                    <svg class="h-4 w-4 shrink-0 text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <div id="user-picker-panel"
+                     class="absolute left-0 right-0 z-40 mt-1 hidden overflow-hidden rounded-xl border border-line bg-card shadow-2xl">
+                    <div class="border-b border-line p-2">
+                        <input type="search" id="user-picker-search" placeholder="Search accounts"
+                               class="w-full rounded-lg border border-line bg-elevated px-3 py-2 text-sm text-ink placeholder-muted focus:border-accent focus:outline-none">
+                    </div>
+
+                    <div class="max-h-56 overflow-y-auto overscroll-contain p-1">
+                        @forelse ($customers as $customer)
+                            <label class="user-option flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition hover:bg-elevated"
+                                   data-name="{{ Str::lower($customer->name.' '.$customer->email) }}">
+                                <input type="checkbox" name="user_ids[]" value="{{ $customer->id }}"
+                                       @checked(in_array($customer->id, $filters['user_ids'], true))
+                                       class="user-checkbox h-4 w-4 rounded border-line text-accent focus:ring-accent/30">
+                                <span class="min-w-0">
+                                    <span class="block truncate font-medium text-ink">{{ $customer->name }}</span>
+                                    <span class="block truncate text-[11px] text-muted">{{ $customer->email }}</span>
+                                </span>
+                            </label>
+                        @empty
+                            <p class="px-2.5 py-4 text-center text-xs text-muted">No customer accounts yet.</p>
+                        @endforelse
+
+                        <p id="user-picker-empty" class="hidden px-2.5 py-4 text-center text-xs text-muted">No accounts match.</p>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-2 border-t border-line bg-elevated px-2.5 py-2">
+                        <button type="button" id="user-picker-clear"
+                                class="rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted transition hover:text-danger">
+                            Clear
+                        </button>
+                        <button type="button" id="user-picker-apply"
+                                class="rounded-lg bg-gradient-to-r from-accent to-accent2 px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90">
+                            Apply
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label for="status" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Status</label>
+                <select name="status" id="status" class="{{ $input }}">
+                    <option value="all">All statuses</option>
+                    @foreach ($statusMeta as $value => $meta)
+                        <option value="{{ $value }}" @selected($filters['status'] === $value)>{{ $meta['label'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             <div id="dash-custom" class="grid grid-cols-2 gap-3 sm:col-span-2 {{ $filters['period'] === 'custom' ? '' : 'hidden' }}">
                 <div>
                     <label for="from" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">From</label>
-                    <input type="date" name="from" id="from" value="{{ $filters['from'] }}"
-                           class="w-full rounded-xl border border-line bg-elevated px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
+                    <input type="date" name="from" id="from" value="{{ $filters['from'] }}" class="{{ $input }}">
                 </div>
                 <div>
                     <label for="to" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">To</label>
-                    <input type="date" name="to" id="to" value="{{ $filters['to'] }}"
-                           class="w-full rounded-xl border border-line bg-elevated px-3.5 py-2.5 text-sm text-ink focus:border-accent focus:outline-none">
+                    <input type="date" name="to" id="to" value="{{ $filters['to'] }}" class="{{ $input }}">
                 </div>
             </div>
         </div>
@@ -133,7 +219,7 @@
         <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-4">
             <button type="submit"
                     class="rounded-xl bg-gradient-to-r from-accent to-accent2 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent/25 transition hover:opacity-90">
-                Apply
+                Apply filters
             </button>
 
             @if ($activeFilterCount > 0)
@@ -142,6 +228,11 @@
                     Clear ({{ $activeFilterCount }})
                 </a>
             @endif
+
+            <a href="{{ route('admin.orders.index', request()->query()) }}"
+               class="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-muted transition hover:border-accent hover:text-accent">
+                See these orders
+            </a>
 
             <span class="ml-auto inline-flex items-center gap-2 rounded-lg bg-elevated px-3 py-1.5 text-xs font-medium text-muted">
                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -432,6 +523,7 @@
 @endsection
 
 @push('scripts')
+@include('partials.user-picker-script')
 <script>
     (function () {
         const form = document.getElementById('dash-filter');
@@ -447,8 +539,10 @@
             }
         });
 
-        document.getElementById('product_id').addEventListener('change', function () {
-            form.submit();
+        ['product_id', 'status'].forEach(function (id) {
+            document.getElementById(id).addEventListener('change', function () {
+                form.submit();
+            });
         });
     })();
 
