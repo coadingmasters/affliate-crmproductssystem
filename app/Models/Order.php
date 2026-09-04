@@ -41,18 +41,18 @@ class Order extends Model
      * @var array<string, array{label: string, tone: string, customer: string}>
      */
     public const STATUS_META = [
-        'new' => ['label' => 'New',                     'tone' => 'warning', 'customer' => 'New'],
-        'callback' => ['label' => 'Callback',                'tone' => 'brand',   'customer' => 'Callback scheduled'],
-        'confirmation_department' => ['label' => 'Confirmation Department', 'tone' => 'info',    'customer' => 'In review'],
-        'post_date' => ['label' => 'Post Date',               'tone' => 'info',    'customer' => 'Scheduled'],
-        'awaiting_payment' => ['label' => 'Awaiting Payment',        'tone' => 'warning', 'customer' => 'Awaiting payment'],
-        'sale' => ['label' => 'Sale',                    'tone' => 'success', 'customer' => 'Confirmed'],
-        'active_account' => ['label' => 'Active Account',          'tone' => 'success', 'customer' => 'Active'],
-        'going_to_return' => ['label' => 'Going to Return',         'tone' => 'danger',  'customer' => 'Return in progress'],
-        'card_declined' => ['label' => 'Card Declined',           'tone' => 'danger',  'customer' => 'Payment declined'],
-        'confirmation_failure' => ['label' => 'Confirmation Failure',    'tone' => 'danger',  'customer' => 'Could not confirm'],
-        'duplicate' => ['label' => 'Duplicate',               'tone' => 'muted',   'customer' => 'Duplicate order'],
-        'cancelled' => ['label' => 'Cancelled',               'tone' => 'danger',  'customer' => 'Cancelled'],
+        'new' => ['label' => 'New',                     'tone' => 'warning'],
+        'callback' => ['label' => 'Callback',                'tone' => 'brand'],
+        'confirmation_department' => ['label' => 'Confirmation Department', 'tone' => 'info'],
+        'post_date' => ['label' => 'Post Date',               'tone' => 'info'],
+        'awaiting_payment' => ['label' => 'Awaiting Payment',        'tone' => 'warning'],
+        'sale' => ['label' => 'Sale',                    'tone' => 'success'],
+        'active_account' => ['label' => 'Active Account',          'tone' => 'success'],
+        'going_to_return' => ['label' => 'Going to Return',         'tone' => 'danger'],
+        'card_declined' => ['label' => 'Card Declined',           'tone' => 'danger'],
+        'confirmation_failure' => ['label' => 'Confirmation Failure',    'tone' => 'danger'],
+        'duplicate' => ['label' => 'Duplicate',               'tone' => 'muted'],
+        'cancelled' => ['label' => 'Cancelled',               'tone' => 'danger'],
     ];
 
     /**
@@ -177,7 +177,9 @@ class Order extends Model
      */
     public function customerStatusLabel(): string
     {
-        return self::STATUS_META[$this->status]['customer'] ?? ucfirst($this->status);
+        // Customers and admins read the same word, so a phone call about
+        // "Sale" or "Post Date" means the same thing on both sides.
+        return $this->statusLabel();
     }
 
     /**

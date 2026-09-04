@@ -85,7 +85,7 @@ class OrderController extends Controller
             'series' => $this->earningsByMonth($scope),
             'statusBreakdown' => collect(Order::STATUS_META)
                 ->map(fn ($meta, $key) => [
-                    'label' => $meta['customer'],
+                    'label' => $meta['label'],
                     'tone' => $meta['tone'],
                     'value' => (int) $counts->get($key, 0),
                 ])

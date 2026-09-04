@@ -51,7 +51,7 @@
                 <select name="status" id="status" class="{{ $input }}">
                     <option value="all">All statuses</option>
                     @foreach ($statusMeta as $value => $meta)
-                        <option value="{{ $value }}" @selected($filters['status'] === $value)>{{ $meta['customer'] }}</option>
+                        <option value="{{ $value }}" @selected($filters['status'] === $value)>{{ $meta['label'] }}</option>
                     @endforeach
                 </select>
             </div>

@@ -90,15 +90,18 @@ class CustomerDashboardFiltersTest extends TestCase
             ->assertDontSee('Dana Other');
     }
 
-    public function test_the_status_filter_uses_customer_wording(): void
+    public function test_the_status_filter_uses_the_same_words_as_the_admin(): void
     {
-        $this->dashboard()
-            ->assertOk()
-            ->assertSee('Confirmed')
-            ->assertSee('Awaiting payment')
-            // the admin's own labels stay in the admin panel
-            ->assertDontSee('Confirmation Department')
-            ->assertDontSee('Active Account');
+        $response = $this->dashboard()->assertOk();
+
+        // Every stage reads exactly as it does in the admin panel, so a call
+        // about "Sale" or "Post Date" means the same thing on both sides.
+        foreach (Order::STATUS_META as $meta) {
+            $response->assertSee($meta['label']);
+        }
+
+        $response->assertDontSee('Return in progress')
+            ->assertDontSee('Could not confirm');
     }
 
     public function test_the_money_follows_the_status_filter(): void

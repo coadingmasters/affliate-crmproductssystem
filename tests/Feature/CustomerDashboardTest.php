@@ -130,12 +130,12 @@ class CustomerDashboardTest extends TestCase
 
         $order->update(['status' => 'sale']);
 
-        $this->assertSame('Confirmed', $order->fresh()->customerStatusLabel());
+        $this->assertSame('Sale', $order->fresh()->customerStatusLabel());
 
         $this->actingAs($this->customer)
             ->get(route('order.history'))
             ->assertOk()
-            ->assertSee('Confirmed');
+            ->assertSee('Sale');
     }
 
     public function test_the_chart_covers_six_months_and_survives_an_empty_history(): void
