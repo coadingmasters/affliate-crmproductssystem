@@ -56,7 +56,7 @@ class CustomerOrderController extends Controller
         $filters = $this->filters($request);
 
         $query = $request->user()->orders()
-            ->with(['product', 'productPrice'])
+            ->with(['product', 'productPrice', 'invoice'])
             ->tap(fn (Builder $q) => $this->applyFilters($q, $filters));
 
         $totals = (clone $query)
@@ -85,7 +85,7 @@ class CustomerOrderController extends Controller
     {
         $this->authorizeOrder($request, $order);
 
-        $order->load(['product', 'productPrice']);
+        $order->load(['product', 'productPrice', 'invoice']);
 
         return view('frontend.orders.show', [
             'order' => $order,

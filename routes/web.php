@@ -7,7 +7,9 @@ use App\Http\Controllers\Admin\FormBuilderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\CustomerAuthController;
+use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\CustomerOrderController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 
@@ -46,6 +48,7 @@ Route::middleware(['auth', 'customer'])->group(function () {
     Route::get('/orders/{order}', [CustomerOrderController::class, 'show'])->name('order.show');
     Route::post('/orders/{order}/voice-note', [CustomerOrderController::class, 'storeVoiceNote'])->name('order.voice-note.store');
     Route::delete('/orders/{order}/voice-note', [CustomerOrderController::class, 'destroyVoiceNote'])->name('order.voice-note.destroy');
+    Route::post('/orders/{order}/invoice', [InvoiceController::class, 'store'])->name('order.invoice.store');
 });
 
 /*
@@ -67,7 +70,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         Route::resource('products', ProductController::class)->except('show');
-        Route::resource('users', UserController::class)->except('show');
+        Route::resource('users', UserController::class);
+        Route::patch('invoices/{invoice}/status', [AdminInvoiceController::class, 'updateStatus'])->name('invoices.status');
 
         Route::get('form-builder', [FormBuilderController::class, 'index'])->name('form-builder');
         Route::get('form-builder/preview', [FormBuilderController::class, 'preview'])->name('form-builder.preview');

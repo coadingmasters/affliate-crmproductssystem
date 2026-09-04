@@ -50,7 +50,7 @@ class OrderController extends Controller
         $scope = fn () => $user->orders()->tap(fn (Builder $q) => OrderFilters::apply($q, $filters));
 
         $orders = $scope()
-            ->with(['product', 'productPrice'])
+            ->with(['product', 'productPrice', 'invoice'])
             ->latest()
             ->paginate(10)
             ->withQueryString();

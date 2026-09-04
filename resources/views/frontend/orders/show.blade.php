@@ -91,7 +91,93 @@
 
         {{-- Voice note --}}
         <div class="lg:col-span-1">
-            <div class="rise rounded-2xl border border-line bg-card p-5 shadow-sm sm:p-6" style="--delay: 140ms">
+            {{-- Invoice --}}
+            <div class="rise mb-4 rounded-2xl border border-line bg-card p-4 shadow-sm sm:p-5" style="--delay: 140ms">
+                <div class="mb-1 flex items-center gap-2.5">
+                    <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/10 text-brand">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </span>
+                    <h2 class="text-sm font-semibold text-ink">Invoice</h2>
+                </div>
+
+                @if ($order->invoice)
+                    <p class="mb-3 text-xs text-muted">Sent {{ $order->invoice->sentAtLabel() }}</p>
+
+                    <div class="rounded-xl border border-line bg-elevated p-4">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <p class="font-mono text-sm font-bold text-ink">{{ $order->invoice->number }}</p>
+                                <span class="mt-1 inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $order->invoice->statusClasses() }}">
+                                    {{ $order->invoice->statusLabel() }}
+                                </span>
+                            </div>
+                            <p class="text-2xl font-extrabold tracking-tight text-brand">
+                                ${{ number_format($order->invoice->amount, 2) }}
+                            </p>
+                        </div>
+
+                        @if ($order->invoice->statusChangedAtLabel())
+                            <p class="mt-3 border-t border-line pt-2.5 text-[11px] text-muted">
+                                {{ $order->invoice->statusLabel() }} on {{ $order->invoice->statusChangedAtLabel() }}
+                            </p>
+                        @endif
+
+                        @if ($order->invoice->note)
+                            <p class="mt-2 text-xs text-muted">
+                                <span class="font-semibold text-ink">Your note:</span> {{ $order->invoice->note }}
+                            </p>
+                        @endif
+
+                        @if ($order->invoice->admin_note)
+                            <p class="mt-2 rounded-lg border border-line bg-card px-3 py-2 text-xs text-ink">
+                                <span class="font-semibold">Reply:</span> {{ $order->invoice->admin_note }}
+                            </p>
+                        @endif
+                    </div>
+                @else
+                    <p class="mb-3 text-xs text-muted">
+                        Send an invoice for this order. You will see the status here once it is reviewed.
+                    </p>
+
+                    <form method="POST" action="{{ route('order.invoice.store', $order) }}" class="space-y-3">
+                        @csrf
+
+                        <div class="rounded-xl border border-line bg-elevated px-4 py-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <span class="text-xs font-medium uppercase tracking-wider text-muted">Amount</span>
+                                <span class="text-xl font-extrabold tracking-tight text-brand">
+                                    ${{ number_format($order->total_price, 2) }}
+                                </span>
+                            </div>
+                            <p class="mt-1 text-[11px] text-muted">The order total, taken from the order itself.</p>
+                        </div>
+
+                        <div>
+                            <label for="note" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">
+                                Note <span class="normal-case tracking-normal">(optional)</span>
+                            </label>
+                            <textarea name="note" id="note" rows="2" maxlength="1000"
+                                      placeholder="Anything the team should know"
+                                      class="w-full rounded-xl border {{ $errors->has('note') ? 'border-danger' : 'border-line' }} bg-elevated px-3.5 py-2.5 text-sm text-ink placeholder-muted transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25">{{ old('note') }}</textarea>
+                            @error('note')
+                                <p class="mt-1 text-xs font-medium text-danger">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <button type="submit"
+                                class="cta flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand to-brand2 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand/25">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 20l18-8L3 4v6l12 2-12 2v6z"/>
+                            </svg>
+                            Send Invoice
+                        </button>
+                    </form>
+                @endif
+            </div>
+
+<div class="rise rounded-2xl border border-line bg-card p-5 shadow-sm sm:p-6" style="--delay: 140ms">
                 <div class="mb-1 flex items-center gap-2.5">
                     <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/10 text-brand">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">

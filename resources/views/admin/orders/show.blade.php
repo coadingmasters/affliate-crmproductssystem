@@ -119,6 +119,45 @@
                 </div>
             @endif
 
+            @if ($order->invoice)
+                <div class="rise rounded-2xl border border-line bg-card p-5 sm:p-6" style="--delay: 90ms">
+                    <div class="mb-3 flex items-center gap-2.5">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </span>
+                        <div>
+                            <h2 class="text-sm font-semibold text-ink">Invoice {{ $order->invoice->number }}</h2>
+                            <p class="text-xs text-muted">Sent {{ $order->invoice->sentAtLabel() }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-elevated px-4 py-3">
+                        <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $order->invoice->statusClasses() }}">
+                            {{ $order->invoice->statusLabel() }}
+                        </span>
+                        <span class="text-xl font-extrabold tracking-tight text-ink">
+                            ${{ number_format($order->invoice->amount, 2) }}
+                        </span>
+                    </div>
+
+                    @if ($order->invoice->note)
+                        <p class="mt-3 text-xs text-muted">
+                            <span class="font-semibold text-ink">Their note:</span> {{ $order->invoice->note }}
+                        </p>
+                    @endif
+
+                    <a href="{{ route('admin.users.show', $order->user_id) }}#invoice-{{ $order->invoice->id }}"
+                       class="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-accent transition hover:underline">
+                        Change the status on their profile
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </a>
+                </div>
+            @endif
+
             @if ($order->hasVoiceNote())
                 <div class="rise rounded-2xl border border-line bg-card p-5 sm:p-6" style="--delay: 100ms">
                     <div class="mb-3 flex items-center gap-2.5">

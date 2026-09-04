@@ -85,7 +85,7 @@ class OrderController extends Controller
      */
     public function show(Order $order): View
     {
-        $order->load(['product', 'productPrice', 'user']);
+        $order->load(['product', 'productPrice', 'user', 'invoice']);
 
         return view('admin.orders.show', [
             'order' => $order,
@@ -168,7 +168,7 @@ class OrderController extends Controller
     public function trash(Request $request): View
     {
         $orders = Order::onlyTrashed()
-            ->with(['product', 'productPrice', 'user'])
+            ->with(['product', 'productPrice', 'user', 'invoice'])
             ->when($request->query('q'), function (Builder $query, $term) {
                 $term = '%'.$term.'%';
 

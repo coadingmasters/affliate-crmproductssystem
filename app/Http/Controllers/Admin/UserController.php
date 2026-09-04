@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UserRequest;
+use App\Models\Invoice;
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -67,6 +69,46 @@ class UserController extends Controller
 
     /**
      * Show the edit form.
+     */
+    public function show(Request $request, User $user): View
+    {
+        $status = $request->query('invoice_status');
+        $status = in_array($status, Invoice::statuses(), true) ? $status : 'all';
+
+        $invoices = $user->invoices()
+            ->with('order.product')
+            ->when($status !== 'all', fn ($q) => $q->where('status', $status))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        $totals = $user->invoices()
+            ->selectRaw('status, COUNT(*) as count, COALESCE(SUM(amount), 0) as amount')
+            ->groupBy('status')
+            ->get()
+            ->keyBy('status');
+
+        return view('admin.users.show', [
+            'user' => $user,
+            'invoices' => $invoices,
+            'invoiceStatus' => $status,
+            'invoiceTotals' => collect(Invoice::STATUS_META)
+                ->map(fn ($meta, $key) => [
+                    'label' => $meta['label'],
+                    'tone' => $meta['tone'],
+                    'count' => (int) ($totals->get($key)->count ?? 0),
+                    'amount' => (float) ($totals->get($key)->amount ?? 0),
+                ]),
+            'orderCount' => $user->orders()->count(),
+            'orderValue' => (float) $user->orders()
+                ->whereIn('status', Order::EARNING_STATUSES)
+                ->sum('total_price'),
+            'suggestedPassword' => $this->suggestPassword(),
+        ]);
+    }
+
+    /**
+     * Edit an account.
      */
     public function edit(User $user): View
     {

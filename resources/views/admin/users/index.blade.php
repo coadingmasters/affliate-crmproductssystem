@@ -104,7 +104,7 @@
                             <td class="whitespace-nowrap px-5 py-4 text-muted">{{ $account->created_at->format('M j, Y') }}</td>
                             <td class="px-5 py-4">
                                 <div class="flex items-center justify-end gap-2">
-                                    <a href="{{ route('admin.users.edit', $account) }}"
+                                    <a href="{{ route('admin.users.show', $account) }}"
                                        class="rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink transition hover:border-accent/40 hover:bg-accent/10 hover:text-accent">
                                         Edit
                                     </a>
