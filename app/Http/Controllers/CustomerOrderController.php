@@ -6,6 +6,7 @@ use App\Models\FormField;
 use App\Models\Order;
 use App\Models\Product;
 use App\Support\DateRange;
+use App\Support\OrderFilters;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -230,18 +231,10 @@ class CustomerOrderController extends Controller
      */
     private function filters(Request $request): array
     {
-        $status = $request->query('status');
-        $period = $request->query('period');
         $sort = $request->query('sort');
         $perPage = (int) $request->query('per_page', 10);
 
-        return [
-            'q' => trim((string) $request->query('q', '')),
-            'status' => in_array($status, Order::statuses(), true) ? $status : 'all',
-            'period' => array_key_exists((string) $period, DateRange::PERIODS) ? $period : 'all',
-            'from' => DateRange::parseDate($request->query('from')),
-            'to' => DateRange::parseDate($request->query('to')),
-            'product_id' => $request->query('product_id') ? (int) $request->query('product_id') : null,
+        return OrderFilters::parse($request, withAccounts: false) + [
             'sort' => array_key_exists((string) $sort, self::SORTS) ? $sort : 'newest',
             'per_page' => in_array($perPage, self::PER_PAGE, true) ? $perPage : 10,
         ];
@@ -254,37 +247,7 @@ class CustomerOrderController extends Controller
      */
     private function applyFilters(Builder $query, array $filters): void
     {
-        if ($filters['q'] !== '') {
-            $term = '%'.$filters['q'].'%';
-
-            $query->where(function (Builder $q) use ($term, $filters) {
-                $q->where('full_name', 'like', $term)
-                    ->orWhere('address', 'like', $term)
-                    ->orWhere('phone', 'like', $term);
-
-                if (ctype_digit($filters['q'])) {
-                    $q->orWhere('id', (int) $filters['q']);
-                }
-            });
-        }
-
-        if ($filters['status'] !== 'all') {
-            $query->where('status', $filters['status']);
-        }
-
-        if ($filters['product_id']) {
-            $query->where('product_id', $filters['product_id']);
-        }
-
-        [$from, $to] = DateRange::resolve($filters['period'], $filters['from'], $filters['to']);
-
-        if ($from) {
-            $query->where('created_at', '>=', $from);
-        }
-
-        if ($to) {
-            $query->where('created_at', '<=', $to);
-        }
+        OrderFilters::apply($query, $filters);
 
         match ($filters['sort']) {
             'oldest' => $query->oldest(),
@@ -301,12 +264,7 @@ class CustomerOrderController extends Controller
      */
     private function activeFilterCount(array $filters): int
     {
-        return collect([
-            $filters['q'] !== '',
-            $filters['status'] !== 'all',
-            $filters['period'] !== 'all',
-            $filters['product_id'] !== null,
-            $filters['sort'] !== 'newest',
-        ])->filter()->count();
+        return OrderFilters::activeCount($filters)
+            + ($filters['sort'] !== 'newest' ? 1 : 0);
     }
 }

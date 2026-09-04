@@ -18,14 +18,17 @@ final class OrderFilters
     /**
      * Read and sanitise the filters from the query string.
      *
+     * Customer screens pass $withAccounts false: a customer only ever sees
+     * their own orders, so there is no account filter to honour.
+     *
      * @return array<string, mixed>
      */
-    public static function parse(Request $request): array
+    public static function parse(Request $request, bool $withAccounts = true): array
     {
         $status = $request->query('status');
         $period = $request->query('period');
 
-        return [
+        return array_filter([
             'q' => trim((string) $request->query('q', '')),
             'status' => in_array($status, Order::statuses(), true) ? $status : 'all',
             'period' => array_key_exists((string) $period, DateRange::PERIODS) ? $period : 'all',
@@ -33,14 +36,24 @@ final class OrderFilters
             'to' => DateRange::parseDate($request->query('to')),
             'product_id' => $request->query('product_id') ? (int) $request->query('product_id') : null,
             // Several accounts can be inspected side by side.
-            'user_ids' => collect((array) $request->query('user_ids', []))
-                ->filter(fn ($id) => ctype_digit((string) $id))
-                ->map(fn ($id) => (int) $id)
-                ->unique()
-                ->values()
-                ->all(),
-        ];
+            'user_ids' => $withAccounts
+                ? collect((array) $request->query('user_ids', []))
+                    ->filter(fn ($id) => ctype_digit((string) $id))
+                    ->map(fn ($id) => (int) $id)
+                    ->unique()
+                    ->values()
+                    ->all()
+                : null,
+        ], fn ($value, $key) => $key !== 'user_ids' || $value !== null, ARRAY_FILTER_USE_BOTH);
     }
+
+    /**
+     * Search terms a customer may use against their own orders.
+     *
+     * Narrower than the admin search on purpose: there is no point letting
+     * someone search the account column when every row is already theirs.
+     */
+    private const CUSTOMER_SEARCH = ['full_name', 'address', 'phone'];
 
     /**
      * Narrow a query to the given filters.
@@ -52,24 +65,29 @@ final class OrderFilters
      */
     public static function apply(Builder $query, array $filters): void
     {
+        // Absent user_ids marks a customer screen, where the rows are already
+        // scoped to one account.
+        $isAdmin = array_key_exists('user_ids', $filters);
+
         if (($filters['q'] ?? '') !== '') {
             $term = '%'.$filters['q'].'%';
 
-            $query->where(function (Builder $q) use ($term, $filters) {
-                $q->where('full_name', 'like', $term)
-                    ->orWhere('email', 'like', $term)
-                    ->orWhere('phone', 'like', $term)
-                    ->orWhere('address', 'like', $term);
+            $query->where(function (Builder $q) use ($term, $filters, $isAdmin) {
+                foreach ($isAdmin ? ['full_name', 'email', 'phone', 'address'] : self::CUSTOMER_SEARCH as $column) {
+                    $q->orWhere($column, 'like', $term);
+                }
 
                 // Let a bare number match the order id too.
                 if (ctype_digit($filters['q'])) {
                     $q->orWhere('id', (int) $filters['q']);
                 }
 
-                // Match the account that submitted it too.
-                $q->orWhereHas('user', function (Builder $u) use ($term) {
-                    $u->where('name', 'like', $term)->orWhere('email', 'like', $term);
-                });
+                // Only an admin has other accounts to search across.
+                if ($isAdmin) {
+                    $q->orWhereHas('user', function (Builder $u) use ($term) {
+                        $u->where('name', 'like', $term)->orWhere('email', 'like', $term);
+                    });
+                }
             });
         }
 

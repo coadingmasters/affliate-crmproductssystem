@@ -6,8 +6,10 @@ use App\Http\Requests\StoreOrderRequest;
 use App\Models\FormField;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\User;
+use App\Support\DateRange;
+use App\Support\OrderFilters;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,37 +37,36 @@ class OrderController extends Controller
     /**
      * The signed in customer's own dashboard.
      *
-     * Everything is scoped to the signed in account, and only that customer's
-     * own commission is ever exposed - the admin's cut stays in the admin panel.
+     * Every figure reflects the current filter, and everything is scoped to
+     * the signed in account. Only that customer's own commission is exposed -
+     * the admin's cut stays in the admin panel.
      */
     public function history(Request $request): View
     {
         $user = $request->user();
+        $filters = OrderFilters::parse($request, withAccounts: false);
 
-        $orders = $user->orders()
+        // One scope behind every number on the page.
+        $scope = fn () => $user->orders()->tap(fn (Builder $q) => OrderFilters::apply($q, $filters));
+
+        $orders = $scope()
             ->with(['product', 'productPrice'])
             ->latest()
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
-        $counts = $user->orders()
+        $counts = $scope()
             ->selectRaw('status, count(*) as total')
             ->groupBy('status')
+            ->reorder()
             ->pluck('total', 'status');
 
         $totalOrders = (int) $counts->sum();
         $earnedOrders = $this->sumStatuses($counts, Order::EARNING_STATUSES);
 
-        $earned = (float) $user->orders()
-            ->whereIn('status', Order::EARNING_STATUSES)
-            ->sum('user_commission_total');
-
-        $pending = (float) $user->orders()
-            ->whereIn('status', Order::OPEN_STATUSES)
-            ->sum('user_commission_total');
-
-        $revenue = (float) $user->orders()
-            ->whereIn('status', Order::EARNING_STATUSES)
-            ->sum('total_price');
+        $earned = (float) $scope()->whereIn('status', Order::EARNING_STATUSES)->sum('user_commission_total');
+        $pending = (float) $scope()->whereIn('status', Order::OPEN_STATUSES)->sum('user_commission_total');
+        $revenue = (float) $scope()->whereIn('status', Order::EARNING_STATUSES)->sum('total_price');
 
         return view('frontend.history', [
             'orders' => $orders,
@@ -81,7 +82,7 @@ class OrderController extends Controller
             'averageEarning' => $earnedOrders > 0 ? $earned / $earnedOrders : 0.0,
             'conversionRate' => $totalOrders > 0 ? $earnedOrders / $totalOrders * 100 : 0.0,
 
-            'series' => $this->earningsByMonth($user),
+            'series' => $this->earningsByMonth($scope),
             'statusBreakdown' => collect(Order::STATUS_META)
                 ->map(fn ($meta, $key) => [
                     'label' => $meta['customer'],
@@ -91,7 +92,14 @@ class OrderController extends Controller
                 ->filter(fn ($row) => $row['value'] > 0)
                 ->sortByDesc('value')
                 ->values(),
-            'topProducts' => $this->topEarningProducts($user),
+            'topProducts' => $this->topEarningProducts($scope),
+
+            'filters' => $filters,
+            'periods' => DateRange::PERIODS,
+            'statusMeta' => Order::STATUS_META,
+            'products' => Product::orderBy('name')->get(['id', 'name']),
+            'rangeLabel' => DateRange::label($filters['period'], $filters['from'], $filters['to']),
+            'activeFilterCount' => OrderFilters::activeCount($filters),
         ]);
     }
 
@@ -102,14 +110,15 @@ class OrderController extends Controller
      *
      * @return Collection<int, array<string, mixed>>
      */
-    private function earningsByMonth(User $user): Collection
+    private function earningsByMonth(callable $scope): Collection
     {
         $tz = config('app.display_timezone');
         $start = CarbonImmutable::now($tz)->startOfMonth()->subMonths(self::CHART_MONTHS - 1);
 
-        $rows = $user->orders()
+        $rows = $scope()
             ->whereIn('status', Order::EARNING_STATUSES)
             ->where('created_at', '>=', $start->utc())
+            ->reorder()
             ->get(['created_at', 'user_commission_total'])
             ->groupBy(fn ($order) => $order->created_at->timezone($tz)->format('Y-m'));
 
@@ -131,13 +140,14 @@ class OrderController extends Controller
      *
      * @return Collection<int, array<string, mixed>>
      */
-    private function topEarningProducts(User $user): Collection
+    private function topEarningProducts(callable $scope): Collection
     {
-        return $user->orders()
+        return $scope()
             ->whereIn('status', Order::EARNING_STATUSES)
             ->selectRaw('product_id, COUNT(*) as orders, SUM(user_commission_total) as earned')
             ->with('product:id,name')
             ->groupBy('product_id')
+            ->reorder()
             ->orderByDesc('earned')
             ->take(4)
             ->get()

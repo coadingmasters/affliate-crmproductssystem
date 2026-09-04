@@ -58,6 +58,95 @@
         <p class="mt-1 text-sm text-muted">What you have earned, and where every order stands.</p>
     </div>
 
+    {{-- Filters: every figure below reflects this selection --}}
+    @php
+        $input = 'w-full rounded-xl border border-line bg-elevated px-3.5 py-2.5 text-sm text-ink placeholder-muted transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25';
+    @endphp
+
+    <form method="GET" action="{{ route('order.history') }}" id="dash-filter"
+          class="rise relative z-20 mb-4 rounded-2xl border border-line bg-card p-4 shadow-sm sm:p-5" style="--delay: 40ms">
+
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+
+            <div>
+                <label for="q" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Search</label>
+                <div class="relative">
+                    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+                    </svg>
+                    <input type="search" name="q" id="q" value="{{ $filters['q'] }}"
+                           placeholder="Name, address, phone or #id" class="{{ $input }} pl-9">
+                </div>
+            </div>
+
+            <div>
+                <label for="period" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Date range</label>
+                <select name="period" id="period" class="{{ $input }}">
+                    @foreach ($periods as $value => $label)
+                        <option value="{{ $value }}" @selected($filters['period'] === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label for="product_id" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Product</label>
+                <select name="product_id" id="product_id" class="{{ $input }}">
+                    <option value="">All products</option>
+                    @foreach ($products as $product)
+                        <option value="{{ $product->id }}" @selected($filters['product_id'] === $product->id)>{{ $product->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label for="status" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">Status</label>
+                <select name="status" id="status" class="{{ $input }}">
+                    <option value="all">All statuses</option>
+                    @foreach ($statusMeta as $value => $meta)
+                        <option value="{{ $value }}" @selected($filters['status'] === $value)>{{ $meta['customer'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div id="dash-custom" class="grid grid-cols-2 gap-3 sm:col-span-2 {{ $filters['period'] === 'custom' ? '' : 'hidden' }}">
+                <div>
+                    <label for="from" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">From</label>
+                    <input type="date" name="from" id="from" value="{{ $filters['from'] }}" class="{{ $input }}">
+                </div>
+                <div>
+                    <label for="to" class="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">To</label>
+                    <input type="date" name="to" id="to" value="{{ $filters['to'] }}" class="{{ $input }}">
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center gap-2.5 border-t border-line pt-4">
+            <button type="submit"
+                    class="cta rounded-xl bg-gradient-to-r from-brand to-brand2 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand/25">
+                Apply filters
+            </button>
+
+            @if ($activeFilterCount > 0)
+                <a href="{{ route('order.history') }}"
+                   class="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-muted transition hover:border-danger hover:text-danger">
+                    Clear ({{ $activeFilterCount }})
+                </a>
+            @endif
+
+            <a href="{{ route('order.list', request()->query()) }}"
+               class="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-muted transition hover:border-brand hover:text-brand">
+                See these orders
+            </a>
+
+            <span class="ml-auto inline-flex items-center gap-2 rounded-lg bg-elevated px-3 py-1.5 text-xs font-medium text-muted">
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                Showing: {{ $rangeLabel }}
+            </span>
+        </div>
+    </form>
+
     {{-- Hero: the number that matters most --}}
     <div class="rise mb-4 overflow-hidden rounded-2xl border border-brand/25 bg-gradient-to-br from-brand/10 via-card to-brand2/10 shadow-sm" style="--delay: 60ms">
         <div class="grid gap-px bg-line/60 sm:grid-cols-3">
@@ -83,7 +172,7 @@
             <div class="bg-card/60 p-5 sm:p-6">
                 <p class="text-xs font-semibold uppercase tracking-wider text-muted">Lifetime Value</p>
                 <p class="mt-2 text-2xl font-bold tracking-tight text-ink">${{ number_format($lifetime, 2) }}</p>
-                <p class="mt-2 text-xs text-muted">Earned plus pending</p>
+                <p class="mt-2 text-xs text-muted">Earned plus pending{{ $activeFilterCount > 0 ? ', in this selection' : '' }}</p>
             </div>
         </div>
     </div>
@@ -92,7 +181,7 @@
     <div class="rise mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4" style="--delay: 110ms">
         @php
             $tiles = [
-                ['label' => 'Orders Submitted', 'value' => number_format($totalOrders), 'note' => 'All time'],
+                ['label' => 'Orders Submitted', 'value' => number_format($totalOrders), 'note' => $activeFilterCount > 0 ? 'Matching your filters' : 'All time'],
                 ['label' => 'Confirmed', 'value' => number_format($paidOrders), 'note' => number_format($conversionRate, 0).'% of your orders'],
                 ['label' => 'In Progress', 'value' => number_format($newOrders), 'note' => 'Still being processed'],
                 ['label' => 'Revenue Generated', 'value' => '$'.number_format($revenue, 2), 'note' => 'Value of confirmed orders'],
@@ -108,7 +197,7 @@
     </div>
 
     {{-- Earnings over time --}}
-    <div class="rise mb-4 rounded-2xl border border-line bg-card p-4 shadow-sm sm:p-5" style="--delay: 160ms">
+    <div class="rise relative z-0 mb-4 rounded-2xl border border-line bg-card p-4 shadow-sm sm:p-5" style="--delay: 160ms">
         <div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
             <h3 class="text-sm font-semibold text-ink">Commission earned by month</h3>
             <p class="text-xs text-muted">Last {{ $series->count() }} months &middot; confirmed orders only</p>
@@ -345,6 +434,27 @@
 
 @push('scripts')
 <script>
+    (function () {
+        const form = document.getElementById('dash-filter');
+        const period = document.getElementById('period');
+        const custom = document.getElementById('dash-custom');
+
+        period.addEventListener('change', function () {
+            const isCustom = period.value === 'custom';
+            custom.classList.toggle('hidden', !isCustom);
+
+            if (!isCustom) {
+                form.submit();
+            }
+        });
+
+        ['product_id', 'status'].forEach(function (id) {
+            document.getElementById(id).addEventListener('change', function () {
+                form.submit();
+            });
+        });
+    })();
+
     (function () {
         const chart = document.getElementById('earnings-chart');
 
