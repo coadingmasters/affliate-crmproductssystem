@@ -153,12 +153,29 @@
 
             <div class="bg-card/80 p-5 sm:p-6">
                 <p class="text-xs font-semibold uppercase tracking-wider text-muted">Commission Earned</p>
-                <p class="mt-2 text-4xl font-extrabold tracking-tight text-brand sm:text-[2.75rem] sm:leading-none">
-                    ${{ number_format($earned, 2) }}
+                <p class="mt-2 text-4xl font-extrabold tracking-tight sm:text-[2.75rem] sm:leading-none {{ $earned < 0 ? 'text-danger' : 'text-brand' }}">
+                    {{ $earned < 0 ? '-$'.number_format(abs($earned), 2) : '$'.number_format($earned, 2) }}
                 </p>
-                <p class="mt-2 text-xs text-muted">
-                    Confirmed on {{ $paidOrders }} {{ Str::plural('order', $paidOrders) }}
-                </p>
+
+                @if ($reversed > 0)
+                    {{-- Show the arithmetic, so a smaller total never looks like a mistake --}}
+                    <div class="mt-3 space-y-1 border-t border-line pt-2.5 text-xs">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-muted">Confirmed on {{ $paidOrders }} {{ Str::plural('order', $paidOrders) }}</span>
+                            <span class="font-semibold text-ink">${{ number_format($confirmed, 2) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-muted">
+                                Returning {{ $returningOrders }} {{ Str::plural('order', $returningOrders) }}
+                            </span>
+                            <span class="font-semibold text-danger">&minus;${{ number_format($reversed, 2) }}</span>
+                        </div>
+                    </div>
+                @else
+                    <p class="mt-2 text-xs text-muted">
+                        Confirmed on {{ $paidOrders }} {{ Str::plural('order', $paidOrders) }}
+                    </p>
+                @endif
             </div>
 
             <div class="bg-card/60 p-5 sm:p-6">
@@ -178,12 +195,13 @@
     </div>
 
     {{-- Supporting figures --}}
-    <div class="rise mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4" style="--delay: 110ms">
+    <div class="rise mb-4 grid grid-cols-2 gap-3 lg:grid-cols-5" style="--delay: 110ms">
         @php
             $tiles = [
                 ['label' => 'Orders Submitted', 'value' => number_format($totalOrders), 'note' => $activeFilterCount > 0 ? 'Matching your filters' : 'All time'],
                 ['label' => 'Confirmed', 'value' => number_format($paidOrders), 'note' => number_format($conversionRate, 0).'% of your orders'],
                 ['label' => 'In Progress', 'value' => number_format($newOrders), 'note' => 'Still being processed'],
+                ['label' => 'Returning', 'value' => number_format($returningOrders), 'note' => $reversed > 0 ? '-$'.number_format($reversed, 2).' commission' : 'Nothing going back'],
                 ['label' => 'Revenue Generated', 'value' => '$'.number_format($revenue, 2), 'note' => 'Value of confirmed orders'],
             ];
         @endphp
@@ -199,7 +217,7 @@
     {{-- Earnings over time --}}
     <div class="rise relative z-0 mb-4 rounded-2xl border border-line bg-card p-4 shadow-sm sm:p-5" style="--delay: 160ms">
         <div class="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-            <h3 class="text-sm font-semibold text-ink">Commission earned by month</h3>
+            <h3 class="text-sm font-semibold text-ink">Confirmed commission by month</h3>
             <p class="text-xs text-muted">Last {{ $series->count() }} months &middot; confirmed orders only</p>
         </div>
 
@@ -358,6 +376,7 @@
         @forelse ($orders as $order)
             @php
                 $isEarned = in_array($order->status, \App\Models\Order::EARNING_STATUSES, true);
+                $isReversing = in_array($order->status, \App\Models\Order::REVERSING_STATUSES, true);
                 $isLost = in_array($order->status, \App\Models\Order::LOST_STATUSES, true);
             @endphp
             <div class="rounded-2xl border border-line bg-card p-4 shadow-sm transition hover:border-brand/40 hover:shadow-md sm:p-5">
@@ -386,12 +405,18 @@
 
                     <div class="text-right">
                         <p class="text-xl font-extrabold tracking-tight text-ink">${{ number_format($order->total_price, 2) }}</p>
-                        <p class="mt-0.5 text-xs {{ $isLost ? 'text-muted line-through' : ($isEarned ? 'font-semibold text-success' : 'text-muted') }}">
-                            {{ $isEarned ? 'You earned' : ($isLost ? 'No commission' : 'You will earn') }}
-                            @unless ($isLost)
-                                ${{ number_format($order->user_commission_total, 2) }}
-                            @endunless
-                        </p>
+                        @if ($isReversing)
+                            <p class="mt-0.5 text-xs font-semibold text-danger">
+                                Taken back &minus;${{ number_format($order->user_commission_total, 2) }}
+                            </p>
+                        @else
+                            <p class="mt-0.5 text-xs {{ $isLost ? 'text-muted line-through' : ($isEarned ? 'font-semibold text-success' : 'text-muted') }}">
+                                {{ $isEarned ? 'You earned' : ($isLost ? 'No commission' : 'You will earn') }}
+                                @unless ($isLost)
+                                    ${{ number_format($order->user_commission_total, 2) }}
+                                @endunless
+                            </p>
+                        @endif
                     </div>
                 </div>
 

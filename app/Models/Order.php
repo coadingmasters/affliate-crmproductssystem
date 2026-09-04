@@ -84,6 +84,14 @@ class Order extends Model
     public const EARNING_STATUSES = ['sale', 'active_account'];
 
     /**
+     * Statuses that take a commission back off the customer's balance.
+     *
+     * An order only reaches these after it was already a sale, so the
+     * commission it earned has to come back off the total.
+     */
+    public const REVERSING_STATUSES = ['going_to_return'];
+
+    /**
      * Statuses still working towards an outcome.
      */
     public const OPEN_STATUSES = [

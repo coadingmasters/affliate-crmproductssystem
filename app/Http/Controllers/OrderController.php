@@ -64,7 +64,12 @@ class OrderController extends Controller
         $totalOrders = (int) $counts->sum();
         $earnedOrders = $this->sumStatuses($counts, Order::EARNING_STATUSES);
 
-        $earned = (float) $scope()->whereIn('status', Order::EARNING_STATUSES)->sum('user_commission_total');
+        // Commission only counts once a sale is done, and comes back off the
+        // total if that order later goes back.
+        $confirmed = (float) $scope()->whereIn('status', Order::EARNING_STATUSES)->sum('user_commission_total');
+        $reversed = (float) $scope()->whereIn('status', Order::REVERSING_STATUSES)->sum('user_commission_total');
+        $earned = $confirmed - $reversed;
+
         $pending = (float) $scope()->whereIn('status', Order::OPEN_STATUSES)->sum('user_commission_total');
         $revenue = (float) $scope()->whereIn('status', Order::EARNING_STATUSES)->sum('total_price');
 
@@ -76,10 +81,13 @@ class OrderController extends Controller
             'cancelledOrders' => $this->sumStatuses($counts, Order::LOST_STATUSES),
 
             'earned' => $earned,
+            'confirmed' => $confirmed,
+            'reversed' => $reversed,
+            'returningOrders' => $this->sumStatuses($counts, Order::REVERSING_STATUSES),
             'pending' => $pending,
             'lifetime' => $earned + $pending,
             'revenue' => $revenue,
-            'averageEarning' => $earnedOrders > 0 ? $earned / $earnedOrders : 0.0,
+            'averageEarning' => $earnedOrders > 0 ? $confirmed / $earnedOrders : 0.0,
             'conversionRate' => $totalOrders > 0 ? $earnedOrders / $totalOrders * 100 : 0.0,
 
             'series' => $this->earningsByMonth($scope),
