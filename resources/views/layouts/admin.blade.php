@@ -57,7 +57,7 @@
     <div class="flex min-h-screen">
 
         {{-- Sidebar --}}
-        <aside id="sidebar"
+        <aside id="sidebar" data-print-hide
                class="fixed inset-y-0 left-0 z-40 hidden w-64 shrink-0 flex-col bg-sidebar lg:flex">
             <div class="flex h-16 items-center gap-2.5 border-b border-white/10 px-6">
                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-accent2 text-sm font-bold text-white shadow-lg shadow-accent/25">M</span>
@@ -115,7 +115,7 @@
 
         {{-- Content --}}
         <div class="flex min-h-screen w-full flex-col lg:pl-64">
-            <header class="sticky top-0 z-[25] flex h-16 items-center gap-4 border-b border-line bg-card/80 px-4 backdrop-blur-xl sm:px-6">
+            <header data-print-hide class="sticky top-0 z-[25] flex h-16 items-center gap-4 border-b border-line bg-card/80 px-4 backdrop-blur-xl sm:px-6">
                 <button type="button" id="sidebar-toggle"
                         class="rounded-lg p-2 text-muted transition hover:bg-elevated hover:text-ink lg:hidden"
                         aria-label="Toggle navigation">
@@ -145,7 +145,7 @@
 
             <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
                 @if (session('status'))
-                    <div class="rise mb-6 flex items-start gap-3 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
+                    <div data-print-hide class="rise mb-6 flex items-start gap-3 rounded-xl border border-success/30 bg-success/10 px-4 py-3">
                         <svg class="mt-0.5 h-5 w-5 shrink-0 text-success" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>

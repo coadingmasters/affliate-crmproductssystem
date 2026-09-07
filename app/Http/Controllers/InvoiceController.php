@@ -87,43 +87,39 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Raise the claim for everything billable in the chosen period.
+     * Raise the claim for the orders the partner ticked.
      *
-     * The orders are read again here rather than taken from the form, so what
-     * is billed is what the books say, not what a posted field claims.
+     * The ids are only ever a selection: every one is looked up again against
+     * this partner's billable orders, so a posted id cannot reach someone
+     * else's work, an order already claimed for, or one that never earned.
      */
     public function storePeriod(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'period' => ['required', 'string'],
-            'from' => ['nullable', 'date'],
-            'to' => ['nullable', 'date'],
+            'orders' => ['required', 'array', 'min:1'],
+            'orders.*' => ['integer'],
             'note' => ['nullable', 'string', 'max:1000'],
         ], [
+            'orders.required' => 'Tick at least one order to invoice.',
+            'orders.min' => 'Tick at least one order to invoice.',
             'note.max' => 'Keep the note under 1000 characters.',
         ]);
 
-        $period = array_key_exists($data['period'], self::PERIODS) ? $data['period'] : 'this_week';
-        [$start, $end] = DateRange::resolve($period, $data['from'] ?? null, $data['to'] ?? null);
-
-        if (! $start || ! $end) {
-            return back()->with('error', 'Choose a start and end date for the claim.');
-        }
-
         $orders = $this->billable($request)
-            ->where('created_at', '>=', $start)
-            ->where('created_at', '<=', $end)
+            ->whereIn('id', $data['orders'])
             ->get();
 
         if ($orders->isEmpty()) {
-            return back()->with('error', 'There is nothing left to claim for in that period.');
+            return back()->with('error', 'Those orders are no longer available to claim for.');
         }
 
-        $invoice = DB::transaction(function () use ($request, $orders, $start, $end, $data) {
+        $invoice = DB::transaction(function () use ($request, $orders, $data) {
+            // The period is read off the orders themselves, so the document
+            // can never claim a span its lines do not cover.
             $invoice = Invoice::create([
                 'user_id' => $request->user()->id,
-                'period_start' => $start->toDateString(),
-                'period_end' => $end->toDateString(),
+                'period_start' => $orders->min('created_at')->toDateString(),
+                'period_end' => $orders->max('created_at')->toDateString(),
                 'amount' => $orders->sum('user_commission_total'),
                 'status' => 'pending',
                 'note' => $data['note'] ?? null,
@@ -143,7 +139,7 @@ class InvoiceController extends Controller
 
         return redirect()
             ->route('invoices.show', $invoice)
-            ->with('status', 'Invoice '.$invoice->number.' sent for review.');
+            ->with('status', 'Invoice '.$invoice->number.' is ready.');
     }
 
     /**

@@ -36,7 +36,7 @@
     <div class="flex min-h-screen">
 
         {{-- Sidebar --}}
-        <aside id="sidebar"
+        <aside id="sidebar" data-print-hide
                class="fixed inset-y-0 left-0 z-40 hidden w-64 shrink-0 flex-col bg-sidebar lg:flex">
             <div class="flex h-16 items-center gap-2.5 border-b border-white/10 px-6">
                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand2 text-white shadow-lg shadow-brand/25">
@@ -96,7 +96,7 @@
         {{-- Content --}}
         <div class="flex min-h-screen w-full flex-col lg:pl-64">
 
-            <header class="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-line bg-card/80 px-4 backdrop-blur-xl sm:px-6">
+            <header data-print-hide class="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-line bg-card/80 px-4 backdrop-blur-xl sm:px-6">
                 <button type="button" id="sidebar-toggle"
                         class="rounded-lg p-2 text-muted transition hover:bg-elevated hover:text-ink lg:hidden"
                         aria-label="Toggle navigation">
@@ -122,7 +122,7 @@
 
             <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
                 @if (session('status'))
-                    <div class="pop mb-5 flex items-start gap-3 rounded-2xl border border-success/30 bg-success/10 px-4 py-3">
+                    <div data-print-hide class="pop mb-5 flex items-start gap-3 rounded-2xl border border-success/30 bg-success/10 px-4 py-3">
                         <svg class="mt-0.5 h-5 w-5 shrink-0 text-success" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
@@ -131,7 +131,7 @@
                 @endif
 
                 @if ($errors->any())
-                    <div class="pop mb-5 flex items-start gap-3 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3">
+                    <div data-print-hide class="pop mb-5 flex items-start gap-3 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3">
                         <svg class="mt-0.5 h-5 w-5 shrink-0 text-danger" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86a2 2 0 001.71-3L13.71 4a2 2 0 00-3.42 0L3.36 16a2 2 0 001.71 3z"/>
                         </svg>
@@ -142,7 +142,7 @@
                 @yield('content')
             </main>
 
-            <footer class="border-t border-line bg-card/60 px-4 py-5 sm:px-6 lg:px-8">
+            <footer data-print-hide class="border-t border-line bg-card/60 px-4 py-5 sm:px-6 lg:px-8">
                 <div class="flex flex-col items-center justify-between gap-3 text-xs text-muted sm:flex-row">
                     <p>&copy; {{ date('Y') }} Med Alert. All rights reserved.</p>
 

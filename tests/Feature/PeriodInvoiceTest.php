@@ -84,10 +84,17 @@ class PeriodInvoiceTest extends TestCase
         return $order->fresh();
     }
 
-    private function claim(string $period = 'this_week', array $payload = [])
+    /**
+     * Send a claim for the given orders, defaulting to everything billable.
+     *
+     * @param  array<int, int>|null  $orderIds
+     */
+    private function claim(?array $orderIds = null, array $payload = [])
     {
+        $orderIds ??= $this->partner->orders()->billable()->pluck('id')->all();
+
         return $this->actingAs($this->partner)
-            ->post(route('invoices.store'), ['period' => $period] + $payload);
+            ->post(route('invoices.store'), ['orders' => $orderIds] + $payload);
     }
 
     public function test_only_earned_orders_can_be_claimed_for(): void
@@ -134,16 +141,21 @@ class PeriodInvoiceTest extends TestCase
         $this->assertNull($invoice->order_id);
     }
 
-    public function test_the_period_is_recorded_on_the_invoice(): void
+    public function test_the_period_spans_the_orders_that_were_picked(): void
     {
-        $this->makeOrder('sale', '2026-09-09 10:00:00');
+        $this->makeOrder('sale', '2026-09-08 10:00:00');
+        $this->makeOrder('sale', '2026-09-11 10:00:00');
+        $this->makeOrder('sale', '2026-09-13 10:00:00');
 
-        $this->claim();
+        // Only the first two are ticked, so the period must stop at the 11th.
+        $picked = $this->partner->orders()->billable()->orderBy('id')->limit(2)->pluck('id')->all();
+
+        $this->claim($picked);
 
         $invoice = Invoice::firstOrFail();
 
-        $this->assertSame('2026-09-07', $invoice->period_start->toDateString());
-        $this->assertSame('2026-09-13', $invoice->period_end->toDateString());
+        $this->assertSame('2026-09-08', $invoice->period_start->toDateString());
+        $this->assertSame('2026-09-11', $invoice->period_end->toDateString());
         $this->assertTrue($invoice->coversPeriod());
     }
 
@@ -166,9 +178,12 @@ class PeriodInvoiceTest extends TestCase
     {
         $this->makeOrder('sale', '2026-09-09 10:00:00');
 
-        $this->claim()->assertRedirect();
+        $order = $this->partner->orders()->billable()->firstOrFail();
 
-        $this->claim()->assertSessionHas('error');
+        $this->claim([$order->id])->assertRedirect();
+
+        // The same id posted again is no longer billable, so nothing is raised.
+        $this->claim([$order->id])->assertSessionHas('error');
 
         $this->assertSame(1, Invoice::count());
     }
@@ -185,13 +200,40 @@ class PeriodInvoiceTest extends TestCase
             ->assertViewHas('orders', fn ($orders) => $orders->count() === 1);
     }
 
-    public function test_an_empty_period_raises_nothing(): void
+    public function test_ticking_nothing_raises_nothing(): void
     {
-        $this->makeOrder('sale', '2026-09-02 10:00:00');
+        $this->makeOrder('sale', '2026-09-09 10:00:00');
 
-        $this->claim('this_week')->assertSessionHas('error');
+        $this->claim([])->assertSessionHasErrors('orders');
 
         $this->assertSame(0, Invoice::count());
+    }
+
+    public function test_only_the_ticked_orders_are_billed(): void
+    {
+        $keep = $this->makeOrder('sale', '2026-09-09 10:00:00', 60);
+        $this->makeOrder('sale', '2026-09-10 10:00:00', 320);
+
+        $this->claim([$keep->id]);
+
+        $invoice = Invoice::firstOrFail();
+
+        $this->assertSame('60.00', $invoice->amount);
+        $this->assertSame([$keep->id], $invoice->orders->pluck('id')->all());
+    }
+
+    public function test_a_posted_id_that_is_not_billable_is_ignored(): void
+    {
+        $good = $this->makeOrder('sale', '2026-09-09 10:00:00', 60);
+        $cancelled = $this->makeOrder('cancelled', '2026-09-09 10:00:00', 60);
+        $theirs = $this->makeOrder('sale', '2026-09-09 10:00:00', 60, $this->other);
+
+        $this->claim([$good->id, $cancelled->id, $theirs->id]);
+
+        $invoice = Invoice::firstOrFail();
+
+        $this->assertSame('60.00', $invoice->amount);
+        $this->assertSame([$good->id], $invoice->orders->pluck('id')->all());
     }
 
     public function test_a_claim_only_ever_covers_the_partners_own_orders(): void
@@ -209,7 +251,7 @@ class PeriodInvoiceTest extends TestCase
     {
         $this->makeOrder('sale', '2026-09-09 10:00:00', 60);
 
-        $this->claim('this_week', ['amount' => 99999]);
+        $this->claim(null, ['amount' => 99999]);
 
         $this->assertSame('60.00', Invoice::firstOrFail()->amount);
     }
@@ -231,7 +273,7 @@ class PeriodInvoiceTest extends TestCase
         $this->makeOrder('sale', '2026-09-09 10:00:00');
         $this->makeOrder('sale', '2026-09-10 10:00:00', 320);
 
-        $this->claim('this_week', ['note' => 'Two good ones this week.']);
+        $this->claim(null, ['note' => 'Two good ones this week.']);
 
         $invoice = Invoice::firstOrFail();
 
@@ -239,7 +281,7 @@ class PeriodInvoiceTest extends TestCase
             ->get(route('invoices.show', $invoice))
             ->assertOk()
             ->assertSee($invoice->number)
-            ->assertSee('Sep 7 - Sep 13, 2026')
+            ->assertSee('Sep 9 - Sep 10, 2026')
             ->assertSee('$380.00')
             ->assertSee('Two good ones this week.');
     }

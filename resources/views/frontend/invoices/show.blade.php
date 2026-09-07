@@ -6,12 +6,12 @@
 @section('content')
 
     @if (session('status'))
-        <div class="rise mb-4 rounded-2xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">
+        <div data-print-hide class="rise mb-4 rounded-2xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-medium text-success">
             {{ session('status') }}
         </div>
     @endif
 
-    <div class="mb-4 flex flex-wrap items-center gap-3 print:hidden">
+    <div data-print-hide class="mb-4 flex flex-wrap items-center gap-3">
         <a href="{{ route('invoices.index') }}"
            class="inline-flex items-center gap-1.5 rounded-xl border border-line px-4 py-2 text-sm font-medium text-muted transition hover:border-brand hover:text-brand">
             <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -34,12 +34,5 @@
 @endsection
 
 @push('scripts')
-<style>
-    @media print {
-        /* Print the document alone, at full width. */
-        aside, header, nav, footer { display: none !important; }
-        main, body, .flex { display: block !important; }
-        main { padding: 0 !important; }
-    }
-</style>
+    @include('partials.invoice-print')
 @endpush
