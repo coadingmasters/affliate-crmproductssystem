@@ -5,6 +5,10 @@
 
 @php
     $input = 'w-full rounded-xl border border-line bg-elevated px-3.5 py-2.5 text-sm text-ink placeholder-muted transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25';
+
+    // Spreadsheet cells: ruled on every side, the way the sheet is ruled.
+    $th = 'border border-[#3E9E77] px-3 py-3 text-center text-xs font-bold uppercase tracking-wide';
+    $td = 'border border-[#CBDDD3] px-3 py-2.5 text-center';
 @endphp
 
 @section('content')
@@ -112,65 +116,75 @@
         </div>
     </form>
 
-    {{-- Orders --}}
-    <div class="rise space-y-3" style="--delay: 120ms">
-        @forelse ($orders as $order)
-            <a href="{{ route('order.show', $order) }}"
-               class="block rounded-2xl border border-line bg-card p-4 shadow-sm transition hover:border-brand/40 hover:shadow-md sm:p-5">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2.5">
-                            <span class="text-sm font-bold text-ink">Order #{{ $order->id }}</span>
-                            <span class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $order->statusClasses() }}">
-                                {{ $order->customerStatusLabel() }}
-                            </span>
+    {{-- Orders, read the way the team's sheet reads --}}
+    <div class="rise overflow-hidden rounded-2xl border border-line bg-card shadow-sm" style="--delay: 120ms">
+        @if ($orders->count() > 0)
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[1140px] border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-[#5CBF8E] text-[#0A2A1A]">
+                            <th class="{{ $th }}">Lead Submission Date</th>
+                            <th class="{{ $th }} text-left">Full Name</th>
+                            <th class="{{ $th }}">Phone Number</th>
+                            <th class="{{ $th }} text-left">Product</th>
+                            <th class="{{ $th }}">MMR</th>
+                            <th class="{{ $th }}">Opp Value</th>
+                            <th class="{{ $th }}">Status</th>
+                            <th class="{{ $th }}">Date to be Charged</th>
+                            <th class="{{ $th }}">Sale completion</th>
+                            <th class="{{ $th }}">Final Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($orders as $order)
+                            <tr onclick="window.location='{{ route('order.show', $order) }}'"
+                                title="Open order #{{ $order->id }} — {{ $order->address }}"
+                                class="cursor-pointer {{ $loop->even ? 'bg-[#EAF6EE]' : 'bg-white' }} transition hover:bg-brand/10">
 
-                            @if ($order->invoice)
-                                <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $order->invoice->statusClasses() }}">
-                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                    Invoice {{ $order->invoice->statusLabel() }}
-                                </span>
-                            @endif
+                                <td class="{{ $td }} whitespace-nowrap">{{ $order->submittedAt()->format('n/j/Y') }}</td>
 
-                            @if ($order->hasVoiceNote())
-                                <span class="inline-flex items-center gap-1 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-semibold text-brand">
-                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-14 0m7 7v3m0-6a4 4 0 01-4-4V6a4 4 0 118 0v5a4 4 0 01-4 4z"/>
-                                    </svg>
-                                    Voice note
-                                </span>
-                            @endif
-                        </div>
-                        <p class="mt-1 text-sm text-muted">Submitted {{ $order->submittedAtLabel() }}</p>
-                        @if ($order->statusDateValue())
-                            <p class="mt-0.5 text-xs font-semibold text-brand">
-                                {{ $order->statusDateLabel() }}: {{ $order->statusDateValue() }}
-                            </p>
-                        @endif
-                    </div>
+                                <td class="{{ $td }} text-left font-semibold text-ink">
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="truncate">{{ $order->full_name }}</span>
+                                        @if ($order->hasVoiceNote())
+                                            <svg class="h-3.5 w-3.5 shrink-0 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-14 0m7 7v3m0-6a4 4 0 01-4-4V6a4 4 0 118 0v5a4 4 0 01-4 4z"/>
+                                            </svg>
+                                        @endif
+                                    </span>
+                                </td>
 
-                    <div class="text-right">
-                        <p class="text-xl font-extrabold tracking-tight text-brand">${{ number_format($order->total_price, 2) }}</p>
-                        <p class="mt-0.5 text-xs text-muted">
-                            {{ $order->product?->name ?? '—' }} &middot; {{ $order->productPrice?->label ?? '—' }}
-                        </p>
-                    </div>
-                </div>
+                                <td class="{{ $td }} whitespace-nowrap tabular-nums">{{ $order->phone }}</td>
+                                <td class="{{ $td }} whitespace-nowrap text-left">{{ $order->product?->name ?? '—' }}</td>
+                                <td class="{{ $td }} whitespace-nowrap tabular-nums">${{ number_format($order->productPrice?->price ?? 0, 2) }}</td>
+                                <td class="{{ $td }} whitespace-nowrap font-semibold tabular-nums">${{ number_format($order->total_price, 2) }}</td>
 
-                <div class="mt-3 flex items-center justify-between border-t border-line pt-3">
-                    <p class="truncate text-xs text-muted">{{ $order->address }}</p>
-                    <span class="ml-3 inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-brand">
-                        View
-                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </span>
-                </div>
-            </a>
-        @empty
-            <div class="rounded-2xl border border-line bg-card px-6 py-14 text-center shadow-sm">
+                                {{-- The status fills its cell, so a row is readable at a glance --}}
+                                <td class="border border-[#CBDDD3] px-3 py-2.5 text-center text-xs font-bold whitespace-nowrap {{ $order->sheetStatusClasses() }}">
+                                    {{ $order->customerStatusLabel() }}
+                                </td>
+
+                                <td class="{{ $td }} whitespace-nowrap">{{ $order->post_date?->format('n/j/Y') ?? '' }}</td>
+                                <td class="{{ $td }} whitespace-nowrap">{{ $order->sale_date?->format('n/j/Y') ?? '' }}</td>
+
+                                <td class="{{ $td }} whitespace-nowrap">
+                                    @if ($order->invoice)
+                                        <span class="inline-flex rounded px-2 py-0.5 text-xs font-semibold {{ $order->invoice->statusClasses() }}">
+                                            {{ $order->invoice->statusLabel() }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted">&mdash;</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="border-t border-line px-4 py-2 text-xs text-muted lg:hidden">Swipe sideways to see every column.</p>
+        @else
+            <div class="px-6 py-14 text-center">
                 <p class="text-sm font-medium text-ink">No orders match these filters.</p>
                 @if ($activeFilterCount > 0)
                     <a href="{{ route('order.list') }}" class="mt-2 inline-block text-sm font-medium text-brand hover:underline">Clear filters</a>
@@ -178,7 +192,7 @@
                     <a href="{{ route('order.create') }}" class="mt-2 inline-block text-sm font-medium text-brand hover:underline">Place your first order</a>
                 @endif
             </div>
-        @endforelse
+        @endif
     </div>
 
     @if ($orders->total() > 0)

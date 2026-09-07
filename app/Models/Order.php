@@ -57,6 +57,30 @@ class Order extends Model
     ];
 
     /**
+     * The spreadsheet palette the customer order table is read in.
+     *
+     * Partners already work from a sheet where a converted order is a solid
+     * green row and a lost one solid red, with the stages in between carrying
+     * a soft tint. Keeping those exact fills means the two read the same.
+     *
+     * @var array<string, string>
+     */
+    public const STATUS_SHEET = [
+        'new' => 'bg-[#F8C4B8] text-[#7B1D0E]',
+        'callback' => 'bg-[#FCE0AE] text-[#7C4A03]',
+        'confirmation_department' => 'bg-[#CFE4F7] text-[#0B4A78]',
+        'post_date' => 'bg-[#D6EDD1] text-[#1B6B33]',
+        'awaiting_payment' => 'bg-[#FCE0AE] text-[#7C4A03]',
+        'sale' => 'bg-[#0F7A3D] text-white',
+        'active_account' => 'bg-[#12603A] text-white',
+        'going_to_return' => 'bg-[#E03A2B] text-white',
+        'card_declined' => 'bg-[#E03A2B] text-white',
+        'confirmation_failure' => 'bg-[#E5D6F1] text-[#5B2D82]',
+        'duplicate' => 'bg-[#F1F3F5] text-[#3F4855]',
+        'cancelled' => 'bg-[#E03A2B] text-white',
+    ];
+
+    /**
      * Statuses that ask the admin for a date, and where that date is kept.
      *
      * @var array<string, array{column: string, label: string, help: string}>
@@ -207,6 +231,14 @@ class Order extends Model
         $tone = self::STATUS_META[$this->status]['tone'] ?? 'muted';
 
         return "bg-{$tone}/10 text-{$tone}";
+    }
+
+    /**
+     * The fill and text colour this order's status cell takes in the table.
+     */
+    public function sheetStatusClasses(): string
+    {
+        return self::STATUS_SHEET[$this->status] ?? 'bg-[#F1F3F5] text-[#3F4855]';
     }
 
     /**
