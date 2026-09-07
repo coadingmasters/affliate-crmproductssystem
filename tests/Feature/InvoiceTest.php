@@ -217,18 +217,20 @@ class InvoiceTest extends TestCase
     {
         $invoice = $this->sendInvoice($this->makeOrder($this->customer));
 
+        // The list carries the invoice in its own "Final Status" column, so the
+        // word is read under that heading rather than prefixed onto the chip.
         $this->actingAs($this->customer)
             ->get(route('order.list'))
             ->assertOk()
-            ->assertSee('Invoice Pending');
+            ->assertSeeInOrder(['Final Status', 'Pending']);
 
         $this->actingAs($this->admin)->patchJson(route('admin.invoices.status', $invoice), ['status' => 'paid']);
 
         $this->actingAs($this->customer)
             ->get(route('order.list'))
             ->assertOk()
-            ->assertSee('Invoice Paid')
-            ->assertDontSee('Invoice Pending');
+            ->assertSeeInOrder(['Final Status', 'Paid'])
+            ->assertDontSee('Pending');
     }
 
     public function test_the_order_page_offers_then_reports_the_invoice(): void
