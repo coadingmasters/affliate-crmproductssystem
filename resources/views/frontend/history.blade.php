@@ -188,7 +188,9 @@
 
             <div class="bg-card/60 p-5 sm:p-6">
                 <p class="text-xs font-semibold uppercase tracking-wider text-muted">Lifetime Value</p>
-                <p class="mt-2 text-2xl font-bold tracking-tight text-ink">${{ number_format($lifetime, 2) }}</p>
+                <p class="mt-2 text-2xl font-bold tracking-tight {{ $lifetime < 0 ? 'text-danger' : 'text-ink' }}">
+                    {{ $lifetime < 0 ? '-$'.number_format(abs($lifetime), 2) : '$'.number_format($lifetime, 2) }}
+                </p>
                 <p class="mt-2 text-xs text-muted">Earned plus pending{{ $activeFilterCount > 0 ? ', in this selection' : '' }}</p>
             </div>
         </div>
