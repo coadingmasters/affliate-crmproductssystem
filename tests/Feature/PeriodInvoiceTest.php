@@ -429,6 +429,28 @@ class PeriodInvoiceTest extends TestCase
         $this->get(route('invoices.shared.download', $token))->assertNotFound();
     }
 
+    public function test_the_invoice_page_closes_every_tag_it_opens(): void
+    {
+        $this->makeOrder('sale', '2026-09-09 10:00:00');
+        $this->claim();
+
+        $html = $this->actingAs($this->partner)
+            ->get(route('invoices.show', Invoice::firstOrFail()))
+            ->assertOk()
+            ->getContent();
+
+        // A link left open swallows the rest of the page, painting the
+        // button's gradient behind everything after it. Neither tag can
+        // self-close, so the counts must match exactly.
+        foreach (['a', 'button'] as $tag) {
+            $this->assertSame(
+                preg_match_all('/<'.$tag.'[\s>]/i', $html),
+                preg_match_all('/<\/'.$tag.'\s*>/i', $html),
+                "Unbalanced <{$tag}> tags on the invoice page.",
+            );
+        }
+    }
+
     public function test_a_guest_is_sent_to_the_login_screen(): void
     {
         $this->get(route('invoices.index'))->assertRedirect(route('login'));
