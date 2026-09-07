@@ -39,6 +39,7 @@ Route::post('logout', [CustomerAuthController::class, 'logout'])
 
 // A shared invoice opens for anyone holding the link, signed in or not.
 Route::get('/i/{token}', [InvoiceController::class, 'shared'])->name('invoices.shared');
+Route::get('/i/{token}/download', [InvoiceController::class, 'downloadShared'])->name('invoices.shared.download');
 
 Route::middleware(['auth', 'customer'])->group(function () {
     Route::get('/', [OrderController::class, 'create'])->name('order.create');
@@ -57,6 +58,7 @@ Route::middleware(['auth', 'customer'])->group(function () {
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
     Route::post('/invoices', [InvoiceController::class, 'storePeriod'])->name('invoices.store');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::get('/invoices/{invoice}/download', [InvoiceController::class, 'download'])->name('invoices.download');
     Route::post('/invoices/{invoice}/share', [InvoiceController::class, 'share'])->name('invoices.share');
     Route::delete('/invoices/{invoice}/share', [InvoiceController::class, 'unshare'])->name('invoices.unshare');
 });
@@ -82,6 +84,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('products', ProductController::class)->except('show');
         Route::resource('users', UserController::class);
         Route::get('invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
+        Route::get('invoices/{invoice}/download', [AdminInvoiceController::class, 'download'])->name('invoices.download');
         Route::patch('invoices/{invoice}/status', [AdminInvoiceController::class, 'updateStatus'])->name('invoices.status');
 
         Route::get('form-builder', [FormBuilderController::class, 'index'])->name('form-builder');

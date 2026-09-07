@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,6 +22,20 @@ class InvoiceController extends Controller
         $invoice->load(['orders.product', 'order.product', 'user']);
 
         return view('admin.invoices.show', ['invoice' => $invoice]);
+    }
+
+    /**
+     * The invoice as a file, for the team's own records.
+     */
+    public function download(Invoice $invoice): Response
+    {
+        $invoice->load(['orders.product', 'order.product', 'user']);
+
+        return Pdf::loadView('frontend.invoices.pdf', ['invoice' => $invoice])
+            ->setPaper('a4')
+            // Embed only the glyphs used, rather than the whole font file.
+            ->setOption('isFontSubsettingEnabled', true)
+            ->download($invoice->number.'.pdf');
     }
 
     /**

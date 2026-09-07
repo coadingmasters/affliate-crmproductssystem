@@ -380,6 +380,55 @@ class PeriodInvoiceTest extends TestCase
         $this->assertNull($invoice->fresh()->share_token);
     }
 
+    public function test_the_pdf_is_handed_over_as_a_download(): void
+    {
+        $this->makeOrder('sale', '2026-09-09 10:00:00');
+        $this->claim();
+
+        $invoice = Invoice::firstOrFail();
+
+        $response = $this->actingAs($this->partner)
+            ->get(route('invoices.download', $invoice))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        // An attachment saves a file rather than opening a print dialog.
+        $this->assertStringContainsString(
+            'attachment; filename='.$invoice->number.'.pdf',
+            $response->headers->get('content-disposition'),
+        );
+
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
+    public function test_a_partner_cannot_download_someone_elses_invoice(): void
+    {
+        $this->makeOrder('sale', '2026-09-09 10:00:00');
+        $this->claim();
+
+        $this->actingAs($this->other)
+            ->get(route('invoices.download', Invoice::firstOrFail()))
+            ->assertNotFound();
+    }
+
+    public function test_a_shared_invoice_can_be_downloaded_without_an_account(): void
+    {
+        $this->makeOrder('sale', '2026-09-09 10:00:00');
+        $this->claim();
+
+        $invoice = Invoice::firstOrFail();
+        $this->actingAs($this->partner)->post(route('invoices.share', $invoice));
+        $token = $invoice->fresh()->share_token;
+
+        $this->get(route('invoices.shared.download', $token))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        $this->actingAs($this->partner)->delete(route('invoices.unshare', $invoice));
+
+        $this->get(route('invoices.shared.download', $token))->assertNotFound();
+    }
+
     public function test_a_guest_is_sent_to_the_login_screen(): void
     {
         $this->get(route('invoices.index'))->assertRedirect(route('login'));

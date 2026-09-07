@@ -8,7 +8,9 @@ use App\Models\Product;
 use App\Support\DateRange;
 use App\Support\OrderFilters;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -164,6 +166,41 @@ class InvoiceController extends Controller
         $invoice->load(['orders.product', 'order.product', 'user']);
 
         return view('frontend.invoices.show', ['invoice' => $invoice]);
+    }
+
+    /**
+     * The invoice as a file, handed straight to the browser.
+     *
+     * Rendered server side rather than through the browser's print dialog,
+     * so "Download PDF" saves a file instead of opening a printer.
+     */
+    public function download(Request $request, Invoice $invoice): Response
+    {
+        abort_unless($invoice->user_id === $request->user()->id, 404);
+
+        return $this->pdf($invoice);
+    }
+
+    /**
+     * The same file, for whoever holds the share link.
+     */
+    public function downloadShared(string $token): Response
+    {
+        return $this->pdf(Invoice::where('share_token', $token)->firstOrFail());
+    }
+
+    /**
+     * Build the file.
+     */
+    private function pdf(Invoice $invoice): Response
+    {
+        $invoice->load(['orders.product', 'order.product', 'user']);
+
+        return Pdf::loadView('frontend.invoices.pdf', ['invoice' => $invoice])
+            ->setPaper('a4')
+            // Embed only the glyphs used, rather than the whole font file.
+            ->setOption('isFontSubsettingEnabled', true)
+            ->download($invoice->number.'.pdf');
     }
 
     /**
