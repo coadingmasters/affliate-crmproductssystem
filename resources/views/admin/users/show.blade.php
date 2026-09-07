@@ -91,10 +91,14 @@
                                     </div>
 
                                     <p class="mt-1 text-sm text-muted">
-                                        <a href="{{ route('admin.orders.show', $invoice->order_id) }}" class="font-medium text-ink transition hover:text-accent">
-                                            Order #{{ $invoice->order_id }}
+                                        <a href="{{ route('admin.invoices.show', $invoice) }}" class="font-medium text-ink transition hover:text-accent">
+                                            {{ $invoice->subjectLabel() }}
                                         </a>
-                                        &middot; {{ $invoice->order?->product?->name ?? 'Removed product' }}
+                                        @if ($invoice->coversPeriod())
+                                            &middot; {{ $invoice->orders_count }} {{ Str::plural('order', $invoice->orders_count) }}
+                                        @else
+                                            &middot; {{ $invoice->order?->product?->name ?? 'Removed product' }}
+                                        @endif
                                     </p>
 
                                     <p class="mt-0.5 text-xs text-muted">

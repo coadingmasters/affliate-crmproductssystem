@@ -5,8 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['order_id', 'user_id', 'amount', 'status', 'note', 'admin_note'])]
+#[Fillable(['order_id', 'user_id', 'period_start', 'period_end', 'amount', 'status', 'note', 'admin_note'])]
 class Invoice extends Model
 {
     /**
@@ -49,6 +50,8 @@ class Invoice extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'period_start' => 'date',
+            'period_end' => 'date',
             'status_changed_at' => 'datetime',
         ];
     }
@@ -69,6 +72,52 @@ class Invoice extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * Every order this invoice bills.
+     *
+     * The commission is carried on the pivot as it stood when the claim was
+     * raised, so a status that moves afterwards cannot restate what was sent.
+     */
+    public function orders(): BelongsToMany
+    {
+        return $this->belongsToMany(Order::class)
+            ->withPivot(['commission', 'order_value'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Whether this invoice claims for a period rather than a single order.
+     */
+    public function coversPeriod(): bool
+    {
+        return $this->period_start !== null;
+    }
+
+    /**
+     * The period being claimed for, e.g. "Sep 1 - Sep 7, 2026".
+     */
+    public function periodLabel(): ?string
+    {
+        if (! $this->coversPeriod()) {
+            return null;
+        }
+
+        $sameYear = $this->period_start->year === $this->period_end->year;
+
+        return $this->period_start->format($sameYear ? 'M j' : 'M j, Y')
+            .' - '.$this->period_end->format('M j, Y');
+    }
+
+    /**
+     * What this invoice is for, in one line.
+     */
+    public function subjectLabel(): string
+    {
+        return $this->coversPeriod()
+            ? $this->periodLabel()
+            : 'Order #'.$this->order_id;
     }
 
     /**

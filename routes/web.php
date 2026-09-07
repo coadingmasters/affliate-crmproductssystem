@@ -49,6 +49,12 @@ Route::middleware(['auth', 'customer'])->group(function () {
     Route::post('/orders/{order}/voice-note', [CustomerOrderController::class, 'storeVoiceNote'])->name('order.voice-note.store');
     Route::delete('/orders/{order}/voice-note', [CustomerOrderController::class, 'destroyVoiceNote'])->name('order.voice-note.destroy');
     Route::post('/orders/{order}/invoice', [InvoiceController::class, 'store'])->name('order.invoice.store');
+
+    // Claiming for a week's work, rather than one order at a time.
+    Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('/invoices/new', [InvoiceController::class, 'create'])->name('invoices.create');
+    Route::post('/invoices', [InvoiceController::class, 'storePeriod'])->name('invoices.store');
+    Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
 });
 
 /*
@@ -71,6 +77,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::resource('products', ProductController::class)->except('show');
         Route::resource('users', UserController::class);
+        Route::get('invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
         Route::patch('invoices/{invoice}/status', [AdminInvoiceController::class, 'updateStatus'])->name('invoices.status');
 
         Route::get('form-builder', [FormBuilderController::class, 'index'])->name('form-builder');

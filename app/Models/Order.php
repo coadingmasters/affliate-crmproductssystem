@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
@@ -179,6 +181,29 @@ class Order extends Model
     public function invoice(): HasOne
     {
         return $this->hasOne(Invoice::class);
+    }
+
+    /**
+     * The invoices this order has been billed on.
+     *
+     * One row at most, but going through the pivot means "has this been
+     * claimed for?" has a single answer whether the invoice covered this
+     * order alone or a whole week of them.
+     */
+    public function invoices(): BelongsToMany
+    {
+        return $this->belongsToMany(Invoice::class)
+            ->withPivot(['commission', 'order_value'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Orders that have earned commission and have not yet been claimed for.
+     */
+    public function scopeBillable(Builder $query): Builder
+    {
+        return $query->whereIn('status', self::EARNING_STATUSES)
+            ->whereDoesntHave('invoices');
     }
 
     /**

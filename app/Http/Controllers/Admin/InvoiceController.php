@@ -8,9 +8,20 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class InvoiceController extends Controller
 {
+    /**
+     * The invoice as the partner sees it, with the controls to settle it.
+     */
+    public function show(Invoice $invoice): View
+    {
+        $invoice->load(['orders.product', 'order.product', 'user']);
+
+        return view('admin.invoices.show', ['invoice' => $invoice]);
+    }
+
     /**
      * Move an invoice to paid, pending or rejected.
      *

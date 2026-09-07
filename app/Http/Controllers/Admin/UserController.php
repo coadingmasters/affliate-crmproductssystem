@@ -77,6 +77,7 @@ class UserController extends Controller
 
         $invoices = $user->invoices()
             ->with('order.product')
+            ->withCount('orders')
             ->when($status !== 'all', fn ($q) => $q->where('status', $status))
             ->latest()
             ->paginate(15)
