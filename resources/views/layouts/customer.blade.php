@@ -109,13 +109,22 @@
                     <h1 class="truncate text-base font-semibold text-ink sm:text-lg">@yield('heading', 'Dashboard')</h1>
                 </div>
 
+                @php
+                    // The action offered follows the section being read: an
+                    // invoice screen wants a new invoice, not a new order.
+                    $onInvoices = request()->routeIs('invoices.index');
+                    $action = $onInvoices
+                        ? ['href' => route('invoices.index').'#build', 'label' => 'New Invoice']
+                        : ['href' => route('order.create'), 'label' => 'New Order'];
+                @endphp
+
                 @unless (request()->routeIs('order.create'))
-                    <a href="{{ route('order.create') }}"
+                    <a href="{{ $action['href'] }}"
                        class="hidden items-center gap-2 rounded-xl bg-gradient-to-r from-brand to-brand2 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-brand/25 transition hover:opacity-90 sm:inline-flex">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
                         </svg>
-                        New Order
+                        {{ $action['label'] }}
                     </a>
                 @endunless
             </header>

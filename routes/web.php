@@ -37,6 +37,9 @@ Route::post('logout', [CustomerAuthController::class, 'logout'])
 |--------------------------------------------------------------------------
 */
 
+// A shared invoice opens for anyone holding the link, signed in or not.
+Route::get('/i/{token}', [InvoiceController::class, 'shared'])->name('invoices.shared');
+
 Route::middleware(['auth', 'customer'])->group(function () {
     Route::get('/', [OrderController::class, 'create'])->name('order.create');
     Route::post('/order', [OrderController::class, 'store'])->name('order.store');
@@ -52,9 +55,10 @@ Route::middleware(['auth', 'customer'])->group(function () {
 
     // Claiming for a week's work, rather than one order at a time.
     Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
-    Route::get('/invoices/new', [InvoiceController::class, 'create'])->name('invoices.create');
     Route::post('/invoices', [InvoiceController::class, 'storePeriod'])->name('invoices.store');
     Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::post('/invoices/{invoice}/share', [InvoiceController::class, 'share'])->name('invoices.share');
+    Route::delete('/invoices/{invoice}/share', [InvoiceController::class, 'unshare'])->name('invoices.unshare');
 });
 
 /*

@@ -106,24 +106,24 @@ class PeriodInvoiceTest extends TestCase
         $this->makeOrder('going_to_return', '2026-09-09 11:00:00');
 
         $this->actingAs($this->partner)
-            ->get(route('invoices.create'))
+            ->get(route('invoices.index'))
             ->assertOk()
             ->assertViewHas('orders', fn ($orders) => $orders->count() === 2)
             ->assertViewHas('earnings', 120.0);
     }
 
-    public function test_the_week_decides_which_orders_are_covered(): void
+    public function test_the_date_range_narrows_the_orders_on_offer(): void
     {
         $this->makeOrder('sale', '2026-09-09 10:00:00');   // this week
         $this->makeOrder('sale', '2026-09-10 10:00:00');   // this week
         $this->makeOrder('sale', '2026-09-02 10:00:00');   // last week
 
         $this->actingAs($this->partner)
-            ->get(route('invoices.create', ['period' => 'this_week']))
+            ->get(route('invoices.index', ['period' => 'this_week']))
             ->assertViewHas('earnings', 120.0);
 
         $this->actingAs($this->partner)
-            ->get(route('invoices.create', ['period' => 'last_week']))
+            ->get(route('invoices.index', ['period' => 'last_week']))
             ->assertViewHas('earnings', 60.0);
     }
 
@@ -196,7 +196,7 @@ class PeriodInvoiceTest extends TestCase
         $this->actingAs($this->partner)->post(route('order.invoice.store', $order));
 
         $this->actingAs($this->partner)
-            ->get(route('invoices.create'))
+            ->get(route('invoices.index'))
             ->assertViewHas('orders', fn ($orders) => $orders->count() === 1);
     }
 
@@ -305,9 +305,84 @@ class PeriodInvoiceTest extends TestCase
             ->assertViewHas('unbilledCount', 0);
     }
 
+    public function test_the_search_and_product_filters_narrow_the_list(): void
+    {
+        $this->makeOrder('sale', '2026-09-09 10:00:00');
+        $picked = $this->makeOrder('sale', '2026-09-10 10:00:00');
+        $picked->update(['full_name' => 'Wanda Whited']);
+
+        $this->actingAs($this->partner)
+            ->get(route('invoices.index', ['q' => 'Wanda']))
+            ->assertOk()
+            ->assertViewHas('orders', fn ($orders) => $orders->count() === 1);
+
+        $this->actingAs($this->partner)
+            ->get(route('invoices.index', ['product_id' => $this->price->product_id]))
+            ->assertViewHas('orders', fn ($orders) => $orders->count() === 2);
+    }
+
+    public function test_a_shared_invoice_opens_without_signing_in(): void
+    {
+        $this->makeOrder('sale', '2026-09-09 10:00:00');
+        $this->claim();
+
+        $invoice = Invoice::firstOrFail();
+
+        $this->actingAs($this->partner)
+            ->post(route('invoices.share', $invoice))
+            ->assertRedirect();
+
+        $token = $invoice->fresh()->share_token;
+
+        $this->assertNotNull($token);
+
+        // No session at all: whoever holds the link can read it.
+        $this->get(route('invoices.shared', $token))
+            ->assertOk()
+            ->assertSee($invoice->number);
+    }
+
+    public function test_closing_the_share_link_shuts_the_door(): void
+    {
+        $this->makeOrder('sale', '2026-09-09 10:00:00');
+        $this->claim();
+
+        $invoice = Invoice::firstOrFail();
+        $this->actingAs($this->partner)->post(route('invoices.share', $invoice));
+        $token = $invoice->fresh()->share_token;
+
+        $this->actingAs($this->partner)->delete(route('invoices.unshare', $invoice));
+
+        $this->get(route('invoices.shared', $token))->assertNotFound();
+    }
+
+    public function test_an_unshared_invoice_has_no_public_copy(): void
+    {
+        $this->makeOrder('sale', '2026-09-09 10:00:00');
+        $this->claim();
+
+        $this->assertNull(Invoice::firstOrFail()->share_token);
+
+        $this->get(route('invoices.shared', 'made-up-token'))->assertNotFound();
+    }
+
+    public function test_only_the_owner_can_open_or_close_sharing(): void
+    {
+        $this->makeOrder('sale', '2026-09-09 10:00:00');
+        $this->claim();
+
+        $invoice = Invoice::firstOrFail();
+
+        $this->actingAs($this->other)
+            ->post(route('invoices.share', $invoice))
+            ->assertNotFound();
+
+        $this->assertNull($invoice->fresh()->share_token);
+    }
+
     public function test_a_guest_is_sent_to_the_login_screen(): void
     {
         $this->get(route('invoices.index'))->assertRedirect(route('login'));
-        $this->get(route('invoices.create'))->assertRedirect(route('login'));
+        $this->get(route('invoices.index'))->assertRedirect(route('login'));
     }
 }

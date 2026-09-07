@@ -160,6 +160,14 @@ class Invoice extends Model
     }
 
     /**
+     * The public link, if this invoice is being shared.
+     */
+    public function shareUrl(): ?string
+    {
+        return $this->share_token ? route('invoices.shared', $this->share_token) : null;
+    }
+
+    /**
      * When it was sent, in the reader's timezone.
      */
     public function sentAtLabel(): string

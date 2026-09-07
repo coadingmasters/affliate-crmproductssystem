@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Order;
+use App\Models\Product;
 use App\Support\DateRange;
+use App\Support\OrderFilters;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class InvoiceController extends Controller
@@ -17,6 +20,7 @@ class InvoiceController extends Controller
      * The ranges a partner claims for. Weekly is the normal rhythm.
      */
     public const PERIODS = [
+        'all' => 'All time',
         'this_week' => 'This week',
         'last_week' => 'Last week',
         'this_month' => 'This month',
@@ -25,15 +29,37 @@ class InvoiceController extends Controller
     ];
 
     /**
-     * Every invoice this partner has raised.
+     * How the orders waiting to be claimed are ordered.
+     */
+    public const SORTS = [
+        'oldest' => 'Oldest first',
+        'newest' => 'Newest first',
+        'commission_desc' => 'Highest commission',
+        'commission_asc' => 'Lowest commission',
+    ];
+
+    /**
+     * The invoicing page: what is waiting to be claimed, and what has been.
+     *
+     * Filtering and picking happen here rather than on a separate screen, so
+     * a partner narrows to a week and ticks its orders in one place.
      */
     public function index(Request $request): View
     {
+        $filters = $this->filters($request);
+
+        // Only orders that earned and have not been claimed for can be ticked.
+        $orders = $this->billable($request)
+            ->tap(fn ($q) => OrderFilters::apply($q, $filters))
+            ->with(['product', 'productPrice'])
+            ->tap(fn ($q) => $this->sort($q, $filters['sort']))
+            ->get();
+
         $invoices = $request->user()->invoices()
             ->with('order')
             ->withCount('orders')
             ->latest()
-            ->paginate(15);
+            ->paginate(10);
 
         $totals = $request->user()->invoices()
             ->selectRaw('status, COUNT(*) as count, COALESCE(SUM(amount), 0) as amount')
@@ -42,6 +68,21 @@ class InvoiceController extends Controller
             ->keyBy('status');
 
         return view('frontend.invoices.index', [
+            // Picking
+            'orders' => $orders,
+            'filters' => $filters,
+            'periods' => self::PERIODS,
+            'sorts' => self::SORTS,
+            'statusMeta' => collect(Order::STATUS_META)
+                ->only(Order::EARNING_STATUSES)
+                ->all(),
+            'products' => Product::orderBy('name')->get(['id', 'name']),
+            'rangeLabel' => DateRange::label($filters['period'], $filters['from'], $filters['to']),
+            'earnings' => (float) $orders->sum('user_commission_total'),
+            'orderValue' => (float) $orders->sum('total_price'),
+            'activeFilterCount' => $this->activeFilterCount($filters),
+
+            // Everything already claimed
             'invoices' => $invoices,
             'totals' => collect(Invoice::STATUS_META)
                 ->map(fn ($meta, $key) => [
@@ -54,35 +95,6 @@ class InvoiceController extends Controller
                 ->values(),
             'unbilled' => (float) $this->billable($request)->sum('user_commission_total'),
             'unbilledCount' => $this->billable($request)->count(),
-        ]);
-    }
-
-    /**
-     * Build a claim: pick a period, see what it covers, send it.
-     */
-    public function create(Request $request): View
-    {
-        [$period, $from, $to] = $this->period($request);
-        [$start, $end] = DateRange::resolve($period, $from, $to);
-
-        $orders = $this->billable($request)
-            ->when($start, fn ($q) => $q->where('created_at', '>=', $start))
-            ->when($end, fn ($q) => $q->where('created_at', '<=', $end))
-            ->with(['product', 'productPrice'])
-            ->oldest()
-            ->get();
-
-        return view('frontend.invoices.create', [
-            'orders' => $orders,
-            'periods' => self::PERIODS,
-            'period' => $period,
-            'from' => $from,
-            'to' => $to,
-            'rangeLabel' => DateRange::label($period, $from, $to),
-            'start' => $start,
-            'end' => $end,
-            'earnings' => (float) $orders->sum('user_commission_total'),
-            'orderValue' => (float) $orders->sum('total_price'),
         ]);
     }
 
@@ -155,6 +167,44 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Mint a link that opens this invoice without signing in.
+     */
+    public function share(Request $request, Invoice $invoice): RedirectResponse
+    {
+        abort_unless($invoice->user_id === $request->user()->id, 404);
+
+        if (! $invoice->share_token) {
+            $invoice->forceFill(['share_token' => Str::random(48)])->save();
+        }
+
+        return back()->with('status', 'Share link ready. Anyone with it can view this invoice.');
+    }
+
+    /**
+     * Close the link again.
+     */
+    public function unshare(Request $request, Invoice $invoice): RedirectResponse
+    {
+        abort_unless($invoice->user_id === $request->user()->id, 404);
+
+        $invoice->forceFill(['share_token' => null])->save();
+
+        return back()->with('status', 'Share link closed. The old link no longer opens.');
+    }
+
+    /**
+     * The shared copy, for whoever holds the link.
+     */
+    public function shared(string $token): View
+    {
+        $invoice = Invoice::where('share_token', $token)
+            ->with(['orders.product', 'order.product', 'user'])
+            ->firstOrFail();
+
+        return view('frontend.invoices.shared', ['invoice' => $invoice]);
+    }
+
+    /**
      * Raise an invoice against one of the customer's own orders.
      *
      * The amount is read from the order rather than the request, so a posted
@@ -206,18 +256,47 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Read the chosen period back off the query string.
+     * Read and sanitise the filters narrowing the orders to pick from.
      *
-     * @return array{0: string, 1: ?string, 2: ?string}
+     * @return array<string, mixed>
      */
-    private function period(Request $request): array
+    private function filters(Request $request): array
     {
-        $period = $request->query('period');
+        $sort = $request->query('sort');
 
-        return [
-            array_key_exists((string) $period, self::PERIODS) ? $period : 'this_week',
-            DateRange::parseDate($request->query('from')),
-            DateRange::parseDate($request->query('to')),
+        $filters = OrderFilters::parse($request, withAccounts: false) + [
+            'sort' => array_key_exists((string) $sort, self::SORTS) ? $sort : 'oldest',
         ];
+
+        // A period this screen does not offer falls back to all time.
+        if (! array_key_exists($filters['period'], self::PERIODS)) {
+            $filters['period'] = 'all';
+        }
+
+        return $filters;
+    }
+
+    /**
+     * Order the pickable list.
+     */
+    private function sort($query, string $sort): void
+    {
+        match ($sort) {
+            'newest' => $query->latest(),
+            'commission_desc' => $query->orderByDesc('user_commission_total'),
+            'commission_asc' => $query->orderBy('user_commission_total'),
+            default => $query->oldest(),
+        };
+    }
+
+    /**
+     * How many filters are narrowing the list.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    private function activeFilterCount(array $filters): int
+    {
+        return OrderFilters::activeCount($filters)
+            + ($filters['sort'] !== 'oldest' ? 1 : 0);
     }
 }
