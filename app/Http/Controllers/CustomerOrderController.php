@@ -59,10 +59,14 @@ class CustomerOrderController extends Controller
             ->with(['product', 'productPrice', 'invoice'])
             ->tap(fn (Builder $q) => $this->applyFilters($q, $filters));
 
-        $totals = (clone $query)
-            ->selectRaw('COUNT(*) as orders, COALESCE(SUM(total_price), 0) as value')
-            ->reorder()
-            ->first();
+        $totalOrders = (clone $query)->count();
+
+        // Commission only counts once a sale is done, and comes back off the
+        // total if that order later goes back — the same arithmetic the
+        // dashboard uses, so the two screens never disagree.
+        $confirmed = (float) (clone $query)->whereIn('status', Order::EARNING_STATUSES)->sum('user_commission_total');
+        $reversed = (float) (clone $query)->whereIn('status', Order::REVERSING_STATUSES)->sum('user_commission_total');
+        $returningOrders = (clone $query)->whereIn('status', Order::REVERSING_STATUSES)->count();
 
         return view('frontend.orders.index', [
             'orders' => $query->paginate($filters['per_page'])->withQueryString(),
@@ -72,8 +76,11 @@ class CustomerOrderController extends Controller
             'perPageOptions' => self::PER_PAGE,
             'statusMeta' => Order::STATUS_META,
             'products' => Product::orderBy('name')->get(['id', 'name']),
-            'totalOrders' => (int) ($totals->orders ?? 0),
-            'totalValue' => (float) ($totals->value ?? 0),
+            'totalOrders' => $totalOrders,
+            'confirmed' => $confirmed,
+            'reversed' => $reversed,
+            'commission' => $confirmed - $reversed,
+            'returningOrders' => $returningOrders,
             'activeFilterCount' => $this->activeFilterCount($filters),
         ]);
     }

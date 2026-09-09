@@ -20,8 +20,18 @@
             <p class="mt-1 text-2xl font-bold text-ink">{{ number_format($totalOrders) }}</p>
         </div>
         <div class="rounded-2xl border border-line bg-card p-4 shadow-sm">
-            <p class="text-xs font-medium uppercase tracking-wider text-muted">Value</p>
-            <p class="mt-1 text-2xl font-bold text-brand">${{ number_format($totalValue, 2) }}</p>
+            <p class="text-xs font-medium uppercase tracking-wider text-muted">Commission</p>
+            <p class="mt-1 text-2xl font-bold {{ $commission < 0 ? 'text-danger' : 'text-brand' }}">
+                {{ $commission < 0 ? '-$'.number_format(abs($commission), 2) : '$'.number_format($commission, 2) }}
+            </p>
+
+            @if ($reversed > 0)
+                {{-- Show the arithmetic, so a smaller total never looks like a mistake --}}
+                <p class="mt-1 text-[11px] text-muted">
+                    ${{ number_format($confirmed, 2) }} confirmed
+                    &minus; ${{ number_format($reversed, 2) }} returning ({{ $returningOrders }})
+                </p>
+            @endif
         </div>
     </div>
 
