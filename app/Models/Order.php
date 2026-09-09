@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Storage;
     'post_date',
     'sale_date',
     'return_date',
+    'paid_date',
     'notes',
     'form_data',
     'voice_note_path',
@@ -51,6 +52,7 @@ class Order extends Model
         'awaiting_payment' => ['label' => 'Awaiting Payment',        'tone' => 'warning'],
         'sale' => ['label' => 'Sale',                    'tone' => 'success'],
         'active_account' => ['label' => 'Active Account',          'tone' => 'success'],
+        'paid' => ['label' => 'Paid',                    'tone' => 'success'],
         'going_to_return' => ['label' => 'Chargeback',              'tone' => 'danger'],
         'card_declined' => ['label' => 'Card Declined',           'tone' => 'danger'],
         'confirmation_failure' => ['label' => 'Confirmation Failure',    'tone' => 'danger'],
@@ -75,6 +77,7 @@ class Order extends Model
         'awaiting_payment' => 'bg-[#FCE0AE] text-[#7C4A03]',
         'sale' => 'bg-[#0F7A3D] text-white',
         'active_account' => 'bg-[#12603A] text-white',
+        'paid' => 'bg-[#0B4A2A] text-white',
         'going_to_return' => 'bg-[#E03A2B] text-white',
         'card_declined' => 'bg-[#E03A2B] text-white',
         'confirmation_failure' => 'bg-[#E5D6F1] text-[#5B2D82]',
@@ -103,12 +106,17 @@ class Order extends Model
             'label' => 'Chargeback Date',
             'help' => 'when the chargeback happened',
         ],
+        'paid' => [
+            'column' => 'paid_date',
+            'label' => 'Paid Date',
+            'help' => 'when payment was collected',
+        ],
     ];
 
     /**
      * Statuses that count as a converted sale, and so earn commission.
      */
-    public const EARNING_STATUSES = ['sale', 'active_account'];
+    public const EARNING_STATUSES = ['sale', 'active_account', 'paid'];
 
     /**
      * Statuses that take a commission back off the customer's balance.
@@ -158,6 +166,7 @@ class Order extends Model
             'post_date' => 'date',
             'sale_date' => 'date',
             'return_date' => 'date',
+            'paid_date' => 'date',
             'form_data' => 'array',
             'voice_note_uploaded_at' => 'datetime',
         ];

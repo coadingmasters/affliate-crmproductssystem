@@ -52,6 +52,7 @@ class UpdateOrderRequest extends FormRequest
             'post_date.required' => 'Enter the date the customer will pay.',
             'sale_date.required' => 'Enter the date the sale was made.',
             'return_date.required' => 'Enter the date the chargeback happened.',
+            'paid_date.required' => 'Enter the date payment was collected.',
         ];
     }
 }
