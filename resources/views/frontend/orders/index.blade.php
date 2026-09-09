@@ -174,8 +174,14 @@
                                     {{ $order->customerStatusLabel() }}
                                 </td>
 
-                                <td class="{{ $td }} whitespace-nowrap">{{ $order->post_date?->format('n/j/Y') ?? '' }}</td>
-                                <td class="{{ $td }} whitespace-nowrap">{{ $order->sale_date?->format('n/j/Y') ?? '' }}</td>
+                                {{-- Each date belongs to one status; showing it once that status has
+                                     moved on would leave two dates on a row that only has one story. --}}
+                                <td class="{{ $td }} whitespace-nowrap">
+                                    {{ $order->status === 'post_date' ? $order->post_date?->format('n/j/Y') : '' }}
+                                </td>
+                                <td class="{{ $td }} whitespace-nowrap">
+                                    {{ $order->status === 'sale' ? $order->sale_date?->format('n/j/Y') : '' }}
+                                </td>
 
                                 <td class="{{ $td }} whitespace-nowrap">
                                     @if ($order->invoice)
