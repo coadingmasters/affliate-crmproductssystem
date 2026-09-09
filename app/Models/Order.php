@@ -51,7 +51,7 @@ class Order extends Model
         'awaiting_payment' => ['label' => 'Awaiting Payment',        'tone' => 'warning'],
         'sale' => ['label' => 'Sale',                    'tone' => 'success'],
         'active_account' => ['label' => 'Active Account',          'tone' => 'success'],
-        'going_to_return' => ['label' => 'Going to Return',         'tone' => 'danger'],
+        'going_to_return' => ['label' => 'Chargeback',              'tone' => 'danger'],
         'card_declined' => ['label' => 'Card Declined',           'tone' => 'danger'],
         'confirmation_failure' => ['label' => 'Confirmation Failure',    'tone' => 'danger'],
         'duplicate' => ['label' => 'Duplicate',               'tone' => 'muted'],
@@ -100,8 +100,8 @@ class Order extends Model
         ],
         'going_to_return' => [
             'column' => 'return_date',
-            'label' => 'Return Date',
-            'help' => 'when it is going back',
+            'label' => 'Chargeback Date',
+            'help' => 'when the chargeback happened',
         ],
     ];
 

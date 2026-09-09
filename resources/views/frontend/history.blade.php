@@ -166,7 +166,7 @@
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <span class="text-muted">
-                                Returning {{ $returningOrders }} {{ Str::plural('order', $returningOrders) }}
+                                {{ Str::plural('Chargeback', $returningOrders) }} on {{ $returningOrders }} {{ Str::plural('order', $returningOrders) }}
                             </span>
                             <span class="font-semibold text-danger">&minus;${{ number_format($reversed, 2) }}</span>
                         </div>
@@ -203,7 +203,7 @@
                 ['label' => 'Orders Submitted', 'value' => number_format($totalOrders), 'note' => $activeFilterCount > 0 ? 'Matching your filters' : 'All time'],
                 ['label' => 'Confirmed', 'value' => number_format($paidOrders), 'note' => number_format($conversionRate, 0).'% of your orders'],
                 ['label' => 'In Progress', 'value' => number_format($newOrders), 'note' => 'Still being processed'],
-                ['label' => 'Returning', 'value' => number_format($returningOrders), 'note' => $reversed > 0 ? '-$'.number_format($reversed, 2).' commission' : 'Nothing going back'],
+                ['label' => 'Chargebacks', 'value' => number_format($returningOrders), 'note' => $reversed > 0 ? '-$'.number_format($reversed, 2).' commission' : 'None so far'],
                 ['label' => 'Revenue Generated', 'value' => '$'.number_format($revenue, 2), 'note' => 'Value of confirmed orders'],
             ];
         @endphp

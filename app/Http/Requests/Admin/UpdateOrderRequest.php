@@ -28,7 +28,7 @@ class UpdateOrderRequest extends FormRequest
             'notes' => ['nullable', 'string', 'max:5000'],
         ];
 
-        // Post Date, Sale and Going to Return each carry their own date,
+        // Post Date, Sale and Chargeback each carry their own date,
         // required when that status is the one being set.
         foreach (Order::STATUS_DATES as $status => $meta) {
             $rules[$meta['column']] = [
@@ -51,7 +51,7 @@ class UpdateOrderRequest extends FormRequest
         return [
             'post_date.required' => 'Enter the date the customer will pay.',
             'sale_date.required' => 'Enter the date the sale was made.',
-            'return_date.required' => 'Enter the date it is going back.',
+            'return_date.required' => 'Enter the date the chargeback happened.',
         ];
     }
 }

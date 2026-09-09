@@ -29,7 +29,7 @@
                 {{-- Show the arithmetic, so a smaller total never looks like a mistake --}}
                 <p class="mt-1 text-[11px] text-muted">
                     ${{ number_format($confirmed, 2) }} confirmed
-                    &minus; ${{ number_format($reversed, 2) }} returning ({{ $returningOrders }})
+                    &minus; ${{ number_format($reversed, 2) }} {{ Str::plural('chargeback', $returningOrders) }} ({{ $returningOrders }})
                 </p>
             @endif
         </div>

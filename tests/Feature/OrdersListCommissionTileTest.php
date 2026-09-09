@@ -92,7 +92,7 @@ class OrdersListCommissionTileTest extends TestCase
             ->assertViewHas('commission', 0.0)
             ->assertViewHas('returningOrders', 1)
             ->assertSee('confirmed')
-            ->assertSee('returning');
+            ->assertSee('chargeback');
     }
 
     public function test_the_tile_can_go_negative_when_returns_outweigh_sales(): void
