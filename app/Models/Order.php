@@ -135,9 +135,23 @@ class Order extends Model
 
     /**
      * Statuses that ended without a sale.
+     *
+     * A chargeback is not the same loss as the rest of these: it only
+     * happens after an order was already earning, so it is counted on its
+     * own via REVERSING_STATUSES rather than folded into "cancelled".
      */
     public const LOST_STATUSES = [
         'going_to_return', 'card_declined', 'confirmation_failure', 'duplicate', 'cancelled',
+    ];
+
+    /**
+     * Statuses that ended without ever having been a sale.
+     *
+     * The rest of LOST_STATUSES, minus the chargeback — an order here never
+     * earned anything, so there is nothing to claw back, unlike REVERSING_STATUSES.
+     */
+    public const CANCELLED_STATUSES = [
+        'card_declined', 'confirmation_failure', 'duplicate', 'cancelled',
     ];
 
     /**

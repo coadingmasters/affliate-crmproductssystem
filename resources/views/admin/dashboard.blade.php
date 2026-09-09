@@ -83,7 +83,11 @@
             'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
         ],
         [
-            'label' => 'Cancelled / Returned', 'value' => $lostOrders, 'money' => false, 'token' => 'danger',
+            'label' => 'Cancelled', 'value' => $cancelledOrders, 'money' => false, 'token' => 'danger',
+            'icon' => 'M6 18L18 6M6 6l12 12',
+        ],
+        [
+            'label' => 'Chargebacks', 'value' => $chargebackOrders, 'money' => false, 'token' => 'danger',
             'icon' => 'M10 14L21 3m-9 0H3v18h18v-9M15 9l-6 6m0-6l6 6',
         ],
     ];
@@ -244,7 +248,7 @@
     </form>
 
     {{-- KPI cards --}}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         @foreach ($cards as $i => $card)
             <div class="rise lift rounded-2xl border border-line bg-card p-5" style="--delay: {{ $i * 70 }}ms">
                 <div class="flex items-start justify-between">

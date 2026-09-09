@@ -123,8 +123,21 @@ class AdminDashboardFiltersTest extends TestCase
         $this->dashboard(['status' => 'cancelled'])
             ->assertOk()
             ->assertViewHas('totalOrders', 1)
-            ->assertViewHas('lostOrders', 1)
+            ->assertViewHas('cancelledOrders', 1)
+            ->assertViewHas('chargebackOrders', 0)
             ->assertViewHas('revenue', 0.0);
+    }
+
+    public function test_cancelled_and_chargeback_are_counted_apart(): void
+    {
+        $this->makeOrder($this->alice, $this->pendant, 'cancelled', 100);
+        $this->makeOrder($this->alice, $this->pendant, 'card_declined', 100);
+        $this->makeOrder($this->bob, $this->pendant, 'going_to_return', 200);
+
+        $this->dashboard()
+            ->assertOk()
+            ->assertViewHas('cancelledOrders', 2)
+            ->assertViewHas('chargebackOrders', 1);
     }
 
     public function test_it_filters_by_search_term(): void

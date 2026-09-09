@@ -61,7 +61,10 @@ class DashboardController extends Controller
             'totalOrders' => $totalOrders,
             'openOrders' => $sumFor(Order::OPEN_STATUSES),
             'completedOrders' => $completedOrders,
-            'lostOrders' => $sumFor(Order::LOST_STATUSES),
+            // Cancelled and Chargeback read as two different outcomes: one
+            // never converted, the other did and then came back.
+            'cancelledOrders' => $sumFor(Order::CANCELLED_STATUSES),
+            'chargebackOrders' => $sumFor(Order::REVERSING_STATUSES),
 
             'statusCounts' => collect(Order::STATUS_META)
                 ->map(fn ($meta, $key) => [
