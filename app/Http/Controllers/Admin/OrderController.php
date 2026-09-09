@@ -55,7 +55,16 @@ class OrderController extends Controller
 
         // Totals reflect the current filter, not the whole table.
         $totals = (clone $query)
-            ->selectRaw('COUNT(*) as orders, COALESCE(SUM(total_price), 0) as revenue, COALESCE(SUM(user_commission_total), 0) as user_commission, COALESCE(SUM(admin_commission_total), 0) as admin_commission')
+            ->selectRaw('COUNT(*) as orders, COALESCE(SUM(total_price), 0) as revenue')
+            ->reorder()
+            ->first();
+
+        // Commission is only real once an order has converted — the rest is
+        // still pipeline, not money earned, so it is summed separately from
+        // the count and revenue above rather than folded into the same row.
+        $commission = (clone $query)
+            ->whereIn('status', Order::EARNING_STATUSES)
+            ->selectRaw('COALESCE(SUM(user_commission_total), 0) as user_commission, COALESCE(SUM(admin_commission_total), 0) as admin_commission')
             ->reorder()
             ->first();
 
@@ -74,8 +83,8 @@ class OrderController extends Controller
             'statusMeta' => Order::STATUS_META,
             'totalOrders' => (int) ($totals->orders ?? 0),
             'totalRevenue' => (float) ($totals->revenue ?? 0),
-            'totalUserCommission' => (float) ($totals->user_commission ?? 0),
-            'totalAdminCommission' => (float) ($totals->admin_commission ?? 0),
+            'totalUserCommission' => (float) ($commission->user_commission ?? 0),
+            'totalAdminCommission' => (float) ($commission->admin_commission ?? 0),
             'activeFilterCount' => $this->activeFilterCount($filters),
         ]);
     }
